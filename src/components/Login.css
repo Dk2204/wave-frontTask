@@ -1,0 +1,234 @@
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background-color: var(--bg-secondary);
+}
+
+.login-background {
+    display: none;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 320px;
+    padding: 16px 20px;
+    background: white;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.logo-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.logo-icon {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+}
+
+.login-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    color: var(--primary-color);
+}
+
+.login-subtitle {
+    color: var(--text-secondary);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+.login-form {
+    margin-bottom: 24px;
+}
+
+.login-error-message {
+    background-color: #fff5f5;
+    color: #cc0000;
+    padding: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border-left: 3px solid #cc0000;
+    margin-bottom: 12px;
+    text-align: left;
+}
+
+.form-section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 12px;
+    text-align: left;
+    border-left: 2px solid var(--primary-color);
+    padding-left: 8px;
+}
+
+.form-group {
+    margin-bottom: 10px;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 3px;
+    text-transform: uppercase;
+}
+
+.form-input {
+    width: 100%;
+    padding: 7px 10px;
+    background: white;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 13px;
+    border-radius: 0;
+}
+
+.form-input:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+.btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #333;
+}
+
+.login-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 6px;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 8px 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    transition: all var(--transition-fast);
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -9px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--primary-color);
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-left: 8px;
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 12px;
+}
+
+.login-footer {
+    text-align: center;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.login-footer p {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Success View */
+.success-view {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.success-icon-container {
+    width: 60px;
+    height: 60px;
+    background: #e6f7ef;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: #28a745;
+}
+
+.success-icon {
+    font-size: 30px;
+}
+
+.success-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 12px;
+}
+
+.success-message {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 24px;
+}

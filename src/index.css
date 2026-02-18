@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Color Palette - Professional News Platform */
+  --primary-color: #000000;
+  --accent-color: #e31212;
+  /* Traditional news red */
+  --link-color: #0056b3;
+
+  --bg-primary: #ffffff;
+  --bg-secondary: #f4f4f4;
+  --bg-tertiary: #eeeeee;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f9f9f9;
+
+  --text-primary: #121212;
+  --text-secondary: #444444;
+  --text-muted: #666666;
+
+  --border-color: #dddddd;
+  --border-dark: #222222;
+  --border-hover: #bbbbbb;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.08);
+  --shadow-glow: none;
+
+  --radius-sm: 0px;
+  /* Sharp edges for professional news feel */
+  --radius-md: 0px;
+  --radius-lg: 0px;
+
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow: 0.4s ease;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* White background instead of animated gradients */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  z-index: -1;
+}
+
+/* Professional News Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8f8f8;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #999;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* Global Utilities */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+/* Traditional Card Style */
+.glass-effect {
+  background: white;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.glass-effect:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-md);
+}
+
+/* Clean Typography */
+.gradient-text {
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  -webkit-text-fill-color: initial;
+  color: var(--primary-color);
+}
+
+.news-heading {
+  font-family: 'Playfair Display', serif;
+}
+
+button {
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all var(--transition-normal);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  font-family: 'Inter', sans-serif;
+  outline: none;
+}
