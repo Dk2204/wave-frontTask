@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     FiFilter,
     FiCalendar,
@@ -11,11 +11,28 @@ import {
     FiChevronDown,
     FiExternalLink,
     FiClock,
-    FiArrowRight
+    FiArrowRight,
+    FiUser
 } from 'react-icons/fi';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { authAPI, subscriptionsAPI, newsAPI } from '../services/api';
+import { getTriggerName, MAPPED_CHANNELS, TRIGGER_CATEGORY_MAPPING } from '../services/triggerMapping';
 import './Dashboard.css';
+
+/**
+ * Robust date formatting to prevent white-screen crashes on malformed data
+ */
+const formatDateSafe = (dateObj, formatStr) => {
+    if (!dateObj) return 'Never';
+    try {
+        const date = (typeof dateObj === 'string') ? parseISO(dateObj) : dateObj;
+        if (!isValid(date)) return 'Invalid Date';
+        return format(date, formatStr);
+    } catch (e) {
+        console.error("Date formatting error:", e);
+        return 'Invalid Date';
+    }
+};
 
 const NewsCard = ({ item, index, onNewsClick }) => (
     <article
@@ -23,53 +40,74 @@ const NewsCard = ({ item, index, onNewsClick }) => (
         style={{ animationDelay: `${index * 0.05}s` }}
         onClick={(e) => onNewsClick(e, item)}
     >
-        <div className="news-card-header">
-            {item.company && (
-                <span className="company-badge">{item.company}</span>
-            )}
-            {item.announcedDate && (
-                <span className="date-badge">
-                    <FiClock />
-                    {format(parseISO(item.announcedDate), 'MMM dd, yyyy')}
-                </span>
-            )}
+        <div className="news-card-media">
+            <img
+                src={item.image}
+                alt={item.title}
+                className="news-card-img"
+                onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://images.unsplash.com/photo-1614850523060-8da1d56ae167?q=80&w=800&auto=format&fit=crop";
+                }}
+            />
+            <div className="news-card-logo-overlay">
+                <img
+                    src={item.officialLogo}
+                    alt="Logo"
+                    className="news-card-logo"
+                    onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.display = 'none';
+                    }}
+                />
+            </div>
         </div>
 
-        <h3 className="news-title">{item.title || 'Untitled'}</h3>
-
-        {item.description && (
-            <p className="news-description">{item.description}</p>
-        )}
-
-        {item.triggers && item.triggers.length > 0 && (
-            <div className="news-triggers">
-                {item.triggers.map((trigger, idx) => (
-                    <button
-                        key={idx}
-                        className="news-trigger-tag btn-trigger-link"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onNewsClick(e, item);
-                        }}
-                    >
-                        <FiTrendingUp />
-                        {trigger}
-                    </button>
-                ))}
+        <div className="news-card-body">
+            <div className="news-card-header">
+                <span className="company-badge">
+                    {MAPPED_CHANNELS[item.companyDomain] || item.company || item.companyDomain}
+                </span>
+                {item.announcedDate && (
+                    <span className="date-badge">
+                        <FiClock />
+                        {formatDateSafe(item.announcedDate, 'MMM dd, yyyy')}
+                    </span>
+                )}
             </div>
-        )}
 
-        {item.url && (
-            <div className="news-card-footer">
-                <button
-                    onClick={(e) => onNewsClick(e, item)}
-                    className="news-link"
-                >
-                    Read More
+            <h3 className="news-title">{item.title || 'Untitled'}</h3>
+
+            {item.description && (
+                <p className="news-description">{item.description}</p>
+            )}
+
+            {item.triggers && item.triggers.length > 0 && (
+                <div className="news-triggers">
+                    {item.triggers.slice(0, 2).map((trigger, idx) => (
+                        <button
+                            key={idx}
+                            className="news-trigger-tag btn-trigger-link"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onNewsClick(e, item);
+                            }}
+                        >
+                            <FiTrendingUp />
+                            {getTriggerName(trigger)}
+                        </button>
+                    ))}
+                    {item.triggers.length > 2 && <span className="more-triggers">+{item.triggers.length - 2}</span>}
+                </div>
+            )}
+
+            <div className="news-card-footer-simple">
+                <button className="news-read-more-btn">
+                    Read Full Intel
                     <FiArrowRight />
                 </button>
             </div>
-        )}
+        </div>
     </article>
 );
 
@@ -87,12 +125,37 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedNews, setSelectedNews] = useState(null);
     const [canShowLogin, setCanShowLogin] = useState(false);
+    const [lastUpdated, setLastUpdated] = useState(() => {
+        const saved = localStorage.getItem('iz_last_sync_time');
+        if (!saved || saved === 'Never') return new Date();
+        const d = new Date(saved);
+        return isValid(d) ? d : new Date();
+    });
+    const [availableCompanies, setAvailableCompanies] = useState([]);
+    const [availableCategories, setAvailableCategories] = useState([]);
+    const touchStartX = useRef(null);
+
+    const handleTouchStart = (e) => {
+        touchStartX.current = e.touches[0].clientX;
+    };
+
+    const handleTouchEnd = (e) => {
+        if (!touchStartX.current) return;
+        const touchEndX = e.changedTouches[0].clientX;
+        const diff = touchStartX.current - touchEndX;
+
+        // Detect left swipe (threshold 50px)
+        if (diff > 50) {
+            setShowFilters(false);
+        }
+        touchStartX.current = null;
+    };
 
     // Fetch data on mount
     useEffect(() => {
         const init = async () => {
             await fetchSubscriptions();
-            await fetchNews();
+            await fetchNews(true); // Hydrate filters on initial load
         };
         init();
 
@@ -117,8 +180,6 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
         fetchNews();
     }, [filters]);
 
-    // Fetch news when filters change
-
     const fetchSubscriptions = async () => {
         try {
             const data = await subscriptionsAPI.getSubscriptions();
@@ -128,23 +189,71 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
         }
     };
 
-    const fetchNews = async () => {
+    const fetchNews = async (isInitial = false) => {
         setLoading(true);
         try {
+            // Flatten selected categories into all associated trigger codes
+            const selectedTriggerCodes = [];
+            filters.triggers.forEach(category => {
+                Object.keys(TRIGGER_CATEGORY_MAPPING).forEach(code => {
+                    if (TRIGGER_CATEGORY_MAPPING[code].category === category) {
+                        selectedTriggerCodes.push(code);
+                    }
+                });
+            });
+
             const filterPayload = {
                 ...(filters.startDate && { startDate: filters.startDate }),
                 ...(filters.endDate && { endDate: filters.endDate }),
                 ...(filters.companyDomain && { companyDomain: filters.companyDomain }),
-                ...(filters.triggers.length > 0 && { triggers: filters.triggers })
+                // Map local category selection to API trigger codes
+                ...(selectedTriggerCodes.length > 0 && { triggerCodes: selectedTriggerCodes })
             };
 
             const data = await newsAPI.getCompanyNews(filterPayload);
-            setNews(data?.news || data || []);
+            const newsItems = data?.news || data || [];
+            setNews(newsItems);
+
+            // Sync the timestamp with the API's persistent state
+            const syncTime = localStorage.getItem('iz_last_sync_time');
+            if (syncTime) {
+                setLastUpdated(new Date(syncTime));
+            } else {
+                setLastUpdated(new Date());
+            }
+
+            // Update available filters IF this is the initial load OR if no filters are active
+            // This ensures all options remain visible even when a specific filter is selected later
+            if (isInitial || (!filters.companyDomain && filters.triggers.length === 0 && !filters.startDate && !filters.endDate)) {
+                const domainsWithNews = new Set(newsItems.map(item => item.companyDomain));
+                const categoriesWithNews = new Set();
+                newsItems.forEach(item => {
+                    if (item.triggers) {
+                        item.triggers.forEach(t => {
+                            const cat = TRIGGER_CATEGORY_MAPPING[t]?.category;
+                            if (cat) categoriesWithNews.add(cat);
+                        });
+                    }
+                });
+
+                if (subscriptions) {
+                    setAvailableCompanies((subscriptions?.config?.companies || []).filter(domain => domainsWithNews.has(domain)));
+                } else {
+                    setAvailableCompanies(Array.from(domainsWithNews));
+                }
+
+                // Always show ALL 24 trigger categories from the mapping (not just those with news)
+                const allCategories = [...new Set(
+                    Object.values(TRIGGER_CATEGORY_MAPPING).map(v => v.category)
+                )].sort();
+                setAvailableCategories(allCategories);
+            }
         } catch (error) {
             console.error('Failed to fetch news:', error);
             setNews([]);
         } finally {
             setLoading(false);
+            setLastUpdated(new Date());
         }
     };
 
@@ -198,27 +307,19 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
         return (now - itemDate) > trendingThreshold;
     });
 
+    const newsContentRef = useRef(null);
+
     const handleNewsClick = (e, item) => {
         e.preventDefault();
         if (!isAuthenticated) {
-            onLoginClick(item, 'login');
+            onLoginClick(item, 'signup');
             return;
         }
         setSelectedNews(item);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Extract available domains and triggers from subscriptions
-    const availableDomains = subscriptions?.subscriptions
-        ?.filter(sub => sub.resource === 'news.companies')
-        ?.flatMap(sub => sub.companies?.map(c => c.domain) || []) || [];
-
-    const availableTriggers = subscriptions?.subscriptions
-        ?.filter(sub => sub.resource === 'news.companies')
-        ?.flatMap(sub => sub.signals || sub.triggers || []) || [];
-
-    const uniqueDomains = [...new Set(availableDomains)];
-    const uniqueTriggers = [...new Set(availableTriggers)];
+    const uniqueCompanies = availableCompanies;
+    const uniqueTriggers = availableCategories;
 
     return (
         <div className="dashboard-container">
@@ -227,51 +328,60 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
                 <div className="container">
                     <div className="header-content">
                         <div className="header-left">
-                            {!isAuthenticated ? (
-                                canShowLogin && (
-                                    <button className="btn-login-signup animate-fadeIn" onClick={() => onLoginClick(null, 'signup')}>
-                                        Login / Sign Up
+                            {isAuthenticated && (
+                                <>
+                                    <button
+                                        onClick={() => setShowFilters(!showFilters)}
+                                        className="btn-icon"
+                                        title="Toggle Filters"
+                                    >
+                                        <FiFilter />
                                     </button>
-                                )
-                            ) : (
-                                <div className="logo-section">
-                                    <div className="logo-mini">IZ</div>
-                                    <h1 className="dashboard-title gradient-text">Intellizence News</h1>
-                                </div>
+                                    <div className="header-sync-container">
+                                        <button
+                                            className={`sync-btn ${loading ? 'syncing' : ''}`}
+                                            onClick={() => fetchNews(true)}
+                                            disabled={loading}
+                                            title="Sync live news from the feed"
+                                        >
+                                            <FiRefreshCw className={loading ? 'spin' : ''} />
+                                        </button>
+                                        <div className="sync-info">
+                                            <span className="sync-label">Last Updated:</span>
+                                            <span className="sync-time show-pulse">
+                                                {formatDateSafe(lastUpdated, 'h:mm a')}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </>
                             )}
                         </div>
 
-                        {!isAuthenticated && (
-                            <div className="header-center animate-fadeIn">
-                                <h2 className="platform-branding-center">Intellizence News Platform</h2>
+                        <div className="header-center">
+                            <div className="logo-section animate-fadeIn">
+                                <div className="logo-mini">IZ</div>
+                                <h1 className="dashboard-title gradient-text">Intellizence News</h1>
                             </div>
-                        )}
+                        </div>
+
                         <div className="header-right">
-                            {isAuthenticated && (
-                                <button
-                                    onClick={() => setShowFilters(!showFilters)}
-                                    className="btn-icon"
-                                    title="Toggle Filters"
-                                >
-                                    <FiFilter />
-                                </button>
-                            )}
-                            <button
-                                onClick={fetchNews}
-                                className="btn-icon"
-                                title="Refresh"
-                                disabled={loading}
-                            >
-                                <FiRefreshCw className={loading ? 'spinner' : ''} />
-                            </button>
-                            {isAuthenticated && (
+                            {isAuthenticated ? (
                                 <button
                                     onClick={handleLogout}
                                     className="btn-logout"
                                 >
                                     <FiLogOut />
-                                    Logout
+                                    <span>Logout</span>
                                 </button>
+                            ) : canShowLogin && (
+                                <>
+                                    <button className="btn-login-signup animate-fadeIn desktop-only" onClick={() => onLoginClick(null, 'signup')}>
+                                        Login / Sign Up
+                                    </button>
+                                    <button className="btn-profile-mobile animate-fadeIn mobile-only" onClick={() => onLoginClick(null, 'signup')} title="Login / Sign Up">
+                                        <FiUser />
+                                    </button>
+                                </>
                             )}
                         </div>
                     </div>
@@ -281,18 +391,31 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
             <div className="dashboard-main container">
                 {/* Filters Panel - Only visible for authenticated users when toggled */}
                 {isAuthenticated && showFilters && (
-                    <aside className="filters-panel glass-effect animate-slideDown">
+                    <aside
+                        className="filters-panel glass-effect animate-slideDown"
+                        onTouchStart={handleTouchStart}
+                        onTouchEnd={handleTouchEnd}
+                    >
                         <div className="filters-header">
                             <h2 className="filters-title">
                                 <FiFilter />
                                 Filters
                             </h2>
-                            {(filters.startDate || filters.endDate || filters.companyDomain || filters.triggers.length > 0) && (
-                                <button onClick={clearFilters} className="btn-clear">
+                            <div className="filters-actions">
+                                {(filters.startDate || filters.endDate || filters.companyDomain || filters.triggers.length > 0) && (
+                                    <button onClick={clearFilters} className="btn-clear" title="Clear All">
+                                        <FiX />
+                                        <span>Clear All</span>
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => setShowFilters(false)}
+                                    className="btn-icon-close mobile-only"
+                                    title="Close Filters"
+                                >
                                     <FiX />
-                                    Clear All
                                 </button>
-                            )}
+                            </div>
                         </div>
 
                         <div className="filters-content">
@@ -334,8 +457,10 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
                                         className="filter-select"
                                     >
                                         <option value="">All Domains</option>
-                                        {uniqueDomains.map(domain => (
-                                            <option key={domain} value={domain}>{domain}</option>
+                                        {uniqueCompanies.map(domain => (
+                                            <option key={domain} value={domain}>
+                                                {MAPPED_CHANNELS[domain] || domain}
+                                            </option>
                                         ))}
                                     </select>
                                     <FiChevronDown className="select-icon" />
@@ -355,6 +480,7 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
                                                 key={trigger}
                                                 onClick={() => toggleTrigger(trigger)}
                                                 className={`trigger-chip ${filters.triggers.includes(trigger) ? 'active' : ''}`}
+                                                title={trigger}
                                             >
                                                 {trigger}
                                             </button>
@@ -369,34 +495,42 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
                 )}
 
                 {/* News Content */}
-                <main className="news-content">
+                <main className="news-content" ref={newsContentRef}>
                     {isAuthenticated && (
                         <div className="welcome-banner glass-effect animate-fadeIn">
                             <div className="welcome-text">
-                                <h2>Welcome back to your Intelligence Hub</h2>
-                                <p>You have full access to personalized news tracking and advanced filters.</p>
+                                <h2>Welcome to your Open Intelligence Hub</h2>
+                                <p>Enjoy full access to premium news tracking, advanced market filters, and live trigger signals.</p>
                             </div>
                             <div className="welcome-stats">
-                                <div className="stat-pill">Premium Access</div>
+                                <div className="stat-pill">Universal Access</div>
                             </div>
                         </div>
                     )}
 
-                    {/* Search Bar */}
-                    <div className="search-bar glass-effect">
-                        <FiSearch className="search-icon" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search news by title, description, or company..."
-                            className="search-input"
-                        />
-                        {searchQuery && (
-                            <button onClick={() => setSearchQuery('')} className="btn-clear-search">
-                                <FiX />
-                            </button>
-                        )}
+                    {/* Toolbar: Search + Stats */}
+                    <div className="news-toolbar animate-fadeIn">
+                        <div className="search-box">
+                            <FiSearch className="search-icon" />
+                            <input
+                                type="text"
+                                className="search-input-field"
+                                placeholder=""
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            {searchQuery && (
+                                <button className="clear-search" onClick={() => setSearchQuery('')}>
+                                    <FiX />
+                                </button>
+                            )}
+                        </div>
+                        <div className="stats-bar-minimal">
+                            <div className="stat-item-small">
+                                <span className="stat-label-tiny">TOTAL NEWS</span>
+                                <span className="stat-value-small">{filteredNews.length}</span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Filter Active Options Bar */}
@@ -429,19 +563,15 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
                         </div>
                     )}
 
-                    {/* Stats Bar */}
-                    <div className="stats-bar">
-                        <div className="stat-item">
-                            <span className="stat-label">Total News</span>
-                            <span className="stat-value gradient-text">{filteredNews.length}</span>
-                        </div>
-                        {filters.triggers.length > 0 && (
+                    {/* Secondary Stats */}
+                    {filters.triggers.length > 0 && (
+                        <div className="stats-bar animate-fadeIn">
                             <div className="stat-item">
                                 <span className="stat-label">Active Filters</span>
                                 <span className="stat-value gradient-text">{filters.triggers.length}</span>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
                     {/* News Sections */}
                     {loading ? (
@@ -504,85 +634,108 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
             </div>
 
             {/* News Detail Overlay */}
-            {selectedNews && (
-                <div className="news-detail-overlay animate-fadeIn">
-                    <div className="container">
-                        <div className="news-detail-container glass-effect animate-slideUp">
-                            <button
-                                className="btn-close-detail"
-                                onClick={() => setSelectedNews(null)}
-                            >
-                                <FiX />
-                            </button>
+            {
+                selectedNews && (
+                    <div className="news-detail-overlay animate-fadeIn">
+                        <div className="container">
+                            <div className="news-detail-container glass-effect animate-slideUp">
+                                <button
+                                    className="btn-close-detail"
+                                    onClick={() => setSelectedNews(null)}
+                                >
+                                    <FiX />
+                                </button>
 
-                            <div className="detail-header">
-                                {selectedNews.company && (
-                                    <span className="company-badge">{selectedNews.company}</span>
-                                )}
-                                <h2 className="detail-title news-heading">{selectedNews.title}</h2>
-                                <div className="date-badge">
-                                    <FiClock />
-                                    {format(parseISO(selectedNews.announcedDate), 'MMMM dd, yyyy')}
-                                </div>
-                            </div>
-
-                            {selectedNews.image && (
-                                <div className={`detail-image-container ${['Microsoft', 'Tesla'].includes(selectedNews.company) ? 'large-cover-rect' :
-                                    ['NVIDIA', 'Meta', 'Google', 'Amazon'].includes(selectedNews.company) ? 'official-product-rect' : ''
-                                    }`}>
-                                    <img
-                                        key={selectedNews.id}
-                                        src={selectedNews.image}
-                                        alt={selectedNews.title}
-                                        className="detail-image"
-                                        onError={(e) => {
-                                            e.target.onerror = null;
-                                            e.target.src = "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1200";
-                                        }}
-                                    />
-                                </div>
-                            )}
-
-                            <div className="detail-content">
-                                {selectedNews.content ? (
-                                    selectedNews.content.split('\n\n').map((para, i) => (
-                                        <p key={i}>{para}</p>
-                                    ))
-                                ) : (
-                                    <p>{selectedNews.description}</p>
-                                )}
-                            </div>
-
-                            {selectedNews.triggers && selectedNews.triggers.length > 0 && (
-                                <div className="detail-signals">
-                                    <h3 className="signals-label">Market Triggers:</h3>
-                                    <div className="signals-grid">
-                                        {selectedNews.triggers.map((trigger, idx) => (
-                                            <div key={idx} className="signal-item">
-                                                <FiTrendingUp />
-                                                {trigger}
-                                            </div>
-                                        ))}
+                                {/* Official Branding Header */}
+                                <div className="detail-brand-header">
+                                    <div className="detail-logo-box">
+                                        <img
+                                            key={`logo-${selectedNews.id}`}
+                                            src={selectedNews.officialLogo}
+                                            alt={`${selectedNews.company} logo`}
+                                            className="detail-logo-img"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = "https://images.unsplash.com/photo-1614850523060-8da1d56ae167?q=80&w=800&auto=format&fit=crop";
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="verified-badge desktop-only">
+                                        <div className="pulse-dot"></div>
+                                        <span>Verified Intelligence Source</span>
                                     </div>
                                 </div>
-                            )}
 
-                            <div className="detail-footer">
-                                <a
-                                    href={selectedNews.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="btn-primary-news"
-                                >
-                                    Visit Original Source
-                                    <FiExternalLink />
-                                </a>
+                                {/* Story Cover Image - Positioned below logo as requested */}
+                                {selectedNews.image && (
+                                    <div className="detail-cover-box animate-fadeIn">
+                                        <img
+                                            key={`cover-${selectedNews.id}`}
+                                            src={selectedNews.image}
+                                            alt={selectedNews.title}
+                                            className="detail-cover-img"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.style.display = 'none';
+                                                e.target.parentElement.style.display = 'none';
+                                            }}
+                                        />
+                                    </div>
+                                )}
+
+                                <div className="detail-header">
+                                    {selectedNews.company && (
+                                        <span className="company-badge">{selectedNews.company}</span>
+                                    )}
+                                    <h2 className="detail-title news-heading">{selectedNews.title}</h2>
+                                    <div className="date-badge">
+                                        <FiClock />
+                                        {formatDateSafe(selectedNews.announcedDate, 'MMMM dd, yyyy')}
+                                    </div>
+                                </div>
+
+
+                                <div className="detail-content">
+                                    {selectedNews.content ? (
+                                        selectedNews.content.split('\n\n').map((para, i) => (
+                                            <p key={i}>{para}</p>
+                                        ))
+                                    ) : (
+                                        <p>{selectedNews.description}</p>
+                                    )}
+                                </div>
+
+                                {selectedNews.triggers && selectedNews.triggers.length > 0 && (
+                                    <div className="detail-signals">
+                                        <h3 className="signals-label">Market Triggers:</h3>
+                                        <div className="signals-grid">
+                                            {selectedNews.triggers.map((trigger, idx) => (
+                                                <div key={idx} className="signal-item" title={trigger}>
+                                                    <FiTrendingUp />
+                                                    {getTriggerName(trigger)}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="detail-footer">
+                                    <a
+                                        href={selectedNews.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="btn-primary-news"
+                                    >
+                                        Visit Original Source
+                                        <FiExternalLink />
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

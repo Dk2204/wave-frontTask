@@ -101,22 +101,20 @@ const Login = ({ onLoginSuccess, initialMode = 'login', isGatedAccess = false })
                     </div>
                 ) : (
                     <>
-                        {!isGatedAccess && (
-                            <div className="login-tabs">
-                                <button
-                                    className={`tab-btn ${isLoginMode ? 'active' : ''}`}
-                                    onClick={() => { setIsLoginMode(true); setError(''); }}
-                                >
-                                    <FiLogIn /> Login
-                                </button>
-                                <button
-                                    className={`tab-btn ${!isLoginMode ? 'active' : ''}`}
-                                    onClick={() => { setIsLoginMode(false); setError(''); }}
-                                >
-                                    <FiUserPlus /> Sign Up
-                                </button>
-                            </div>
-                        )}
+                        <div className="login-tabs">
+                            <button
+                                className={`tab-btn ${isLoginMode ? 'active' : ''}`}
+                                onClick={() => { setIsLoginMode(true); setError(''); }}
+                            >
+                                <FiLogIn /> Login
+                            </button>
+                            <button
+                                className={`tab-btn ${!isLoginMode ? 'active' : ''}`}
+                                onClick={() => { setIsLoginMode(false); setError(''); }}
+                            >
+                                <FiUserPlus /> Sign Up
+                            </button>
+                        </div>
 
                         <form onSubmit={handleSubmit} className="login-form">
                             {isLoginMode && <h2 className="form-section-title">Log in</h2>}
@@ -145,7 +143,7 @@ const Login = ({ onLoginSuccess, initialMode = 'login', isGatedAccess = false })
                                 />
                             </div>
 
-                            {!isLoginMode && !isGatedAccess && (
+                            {!isLoginMode && (
                                 <div className="form-group animate-fadeIn">
                                     <label className="form-label">
                                         <FiMail className="input-icon" />
@@ -181,7 +179,7 @@ const Login = ({ onLoginSuccess, initialMode = 'login', isGatedAccess = false })
                                 />
                             </div>
 
-                            {!isLoginMode && !isGatedAccess && (
+                            {!isLoginMode && (
                                 <div className="form-group animate-fadeIn">
                                     <label className="form-label">
                                         <FiLock className="input-icon" />
@@ -220,21 +218,17 @@ const Login = ({ onLoginSuccess, initialMode = 'login', isGatedAccess = false })
                         </form>
 
                         <div className="login-footer">
-                            {isGatedAccess ? (
-                                <p>Contact administrator if you don't have an account</p>
-                            ) : (
-                                <p>
-                                    {isLoginMode
-                                        ? "Don't have an account yet?"
-                                        : "Already have an account?"}
-                                    <button
-                                        className="btn-link"
-                                        onClick={toggleMode}
-                                    >
-                                        {isLoginMode ? 'Register Now' : 'Log In Instead'}
-                                    </button>
-                                </p>
-                            )}
+                            <p>
+                                {isLoginMode
+                                    ? "Don't have an account yet?"
+                                    : "Already have an account?"}
+                                <button
+                                    className="btn-link"
+                                    onClick={toggleMode}
+                                >
+                                    {isLoginMode ? 'Register Now' : 'Log In Instead'}
+                                </button>
+                            </p>
                         </div>
                     </>
                 )}

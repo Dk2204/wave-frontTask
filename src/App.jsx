@@ -12,9 +12,10 @@ function App() {
   const [authMode, setAuthMode] = useState('login');
 
   useEffect(() => {
-    // Force a fresh guest experience every time the platform is opened
-    authAPI.logout();
-    setIsAuthenticated(false);
+    // Check if user is already authenticated to enable permanent persistence across reloads
+    if (authAPI.isAuthenticated()) {
+      setIsAuthenticated(true);
+    }
   }, []);
 
   const handleLoginSuccess = () => {
