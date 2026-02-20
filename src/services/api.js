@@ -91,12 +91,13 @@ const augmentNewsItem = (item) => {
 
   // Assign deterministic Logo
   const getPersistentLogo = (hv, origDomain) => {
-    // If the domain is actually valid and not intellizence, use it.
+    // If the domain is actually valid, use proper social-media sourced logo via unavatar
     if (origDomain && origDomain !== 'intellizence.com' && !origDomain.includes('unknown')) {
-      return `https://logo.clearbit.com/${origDomain}`;
+      return `https://unavatar.io/${origDomain}?fallback=https://logo.clearbit.com/${origDomain}`;
     }
     const logoIdx = hv % LOGO_POOL.length;
-    return `https://logo.clearbit.com/${LOGO_POOL[logoIdx]}`;
+    // Fallback to high-quality social logos from our premium pool
+    return `https://unavatar.io/${LOGO_POOL[logoIdx]}?fallback=https://logo.clearbit.com/${LOGO_POOL[logoIdx]}`;
   };
 
   // 3. Keyword-Based Contextual Image System
