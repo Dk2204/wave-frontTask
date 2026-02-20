@@ -182,7 +182,7 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
 
     const fetchSubscriptions = async () => {
         try {
-            const data = await subscriptionsAPI.getUserSubscriptions();
+            const data = await subscriptionsAPI.getSubscriptions();
             setSubscriptions(data);
         } catch (error) {
             console.error('Failed to fetch subscriptions:', error);
@@ -660,7 +660,7 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
                                             }}
                                         />
                                     </div>
-                                    <div className="verified-badge">
+                                    <div className="verified-badge desktop-only">
                                         <div className="pulse-dot"></div>
                                         <span>Verified Intelligence Source</span>
                                     </div>
