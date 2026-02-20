@@ -660,7 +660,7 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
                                             }}
                                         />
                                     </div>
-                                    <div className="verified-badge desktop-only">
+                                    <div className="verified-badge">
                                         <div className="pulse-dot"></div>
                                         <span>Verified Intelligence Source</span>
                                     </div>

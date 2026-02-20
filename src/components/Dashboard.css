@@ -1064,7 +1064,7 @@
 /* ── Branding Header ─────────────────────────────────────────── */
 .detail-brand-header {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     margin: 0 0 24px;
     padding-bottom: 24px;
