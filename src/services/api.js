@@ -95,7 +95,7 @@ const BRAND_REGISTRY = {
   },
   'mastercard.com': {
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1024px-Mastercard-logo.svg.png',
-    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1024px-Mastercard-logo.svg.png'
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/2560px-Mastercard-logo.svg.png'
   },
   'spotify.com': {
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/1024px-Spotify_logo_without_text.svg.png',
@@ -144,6 +144,91 @@ const BRAND_REGISTRY = {
   'federal.bank.in': {
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Federal_Bank_Logo.svg/1024px-Federal_Bank_Logo.svg.png',
     wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Federal_Bank_Logo.svg/1280px-Federal_Bank_Logo.svg.png'
+  },
+  // --- New Synchronized Brands ---
+  'x.com': {
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/X_logo_2023.svg/1024px-X_logo_2023.svg.png',
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/X_logo_2023.svg/2048px-X_logo_2023.svg.png'
+  },
+  'twitter.com': {
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/X_logo_2023.svg/1024px-X_logo_2023.svg.png',
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/X_logo_2023.svg/2048px-X_logo_2023.svg.png'
+  },
+  'adani.com': {
+    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/5e/Adani_Group_logo.svg/1024px-Adani_Group_logo.svg.png',
+    wordmark: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/5e/Adani_Group_logo.svg/1024px-Adani_Group_logo.svg.png'
+  },
+  'adani.in': {
+    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/5e/Adani_Group_logo.svg/1024px-Adani_Group_logo.svg.png',
+    wordmark: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/5e/Adani_Group_logo.svg/1024px-Adani_Group_logo.svg.png'
+  },
+  'anthropic.com': {
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Anthropic_logo.svg/1024px-Anthropic_logo.svg.png',
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Anthropic_logo.svg/2560px-Anthropic_logo.svg.png'
+  },
+  'worldlabs.ai': {
+    logo: 'https://images.crunchbase.com/image/upload/c_pad,h_170,w_170,f_auto,b_white,q_auto:eco,dpr_1/iijsqz7vshx6vps0n7j1',
+    wordmark: 'https://images.crunchbase.com/image/upload/c_pad,h_170,w_170,f_auto,b_white,q_auto:eco,dpr_1/iijsqz7vshx6vps0n7j1'
+  },
+  'godaddy.com': {
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/GoDaddy_logo.svg/1024px-GoDaddy_logo.svg.png',
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/GoDaddy_logo.svg/2560px-GoDaddy_logo.svg.png'
+  },
+  'bestbuy.com': {
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Best_Buy_Logo.svg/1024px-Best_Buy_Logo.svg.png',
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Best_Buy_Logo.svg/2560px-Best_Buy_Logo.svg.png'
+  },
+  'caregility.com': {
+    logo: 'https://unavatar.io/caregility.com',
+    wordmark: 'https://caregility.com/wp-content/uploads/2019/12/Caregility-Logo-Color.png'
+  },
+  'zomato.com': {
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/1/14/Zomato_logo.png',
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Zomato_Logo.svg/2560px-Zomato_Logo.svg.png'
+  },
+  'zomato.in': {
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/1/14/Zomato_logo.png',
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Zomato_Logo.svg/2560px-Zomato_Logo.svg.png'
+  },
+  'huntress.com': {
+    logo: 'https://unavatar.io/huntress.com',
+    wordmark: 'https://huntress.com/hubfs/huntress-logo-blue.svg'
+  },
+  'tim.it': {
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/TIM_logo.svg/1024px-TIM_logo.svg.png',
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/TIM_logo.svg/2560px-TIM_logo.svg.png'
+  },
+  'telecomitalia.it': {
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/TIM_logo.svg/1024px-TIM_logo.svg.png',
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/TIM_logo.svg/2560px-TIM_logo.svg.png'
+  },
+  'x.ai': {
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/XAI_brand_logo.svg/1024px-XAI_brand_logo.svg.png',
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/XAI_brand_logo.svg/2560px-XAI_brand_logo.svg.png'
+  },
+  'irregular.com': {
+    logo: 'https://unavatar.io/irregular.com',
+    wordmark: 'https://irregular.com/logo.svg'
+  },
+  'shriramfinance.in': {
+    logo: 'https://unavatar.io/shriramfinance.in',
+    wordmark: 'https://shriramfinance.in/images/logo.png'
+  },
+  'shriramfinance.com': {
+    logo: 'https://unavatar.io/shriramfinance.in',
+    wordmark: 'https://shriramfinance.in/images/logo.png'
+  },
+  'norm.ai': {
+    logo: 'https://unavatar.io/norm.ai',
+    wordmark: 'https://norm.ai/logo.svg'
+  },
+  'ringcentral.com': {
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/RingCentral_logo.svg/1024px-RingCentral_logo.svg.png',
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/RingCentral_logo.svg/2560px-RingCentral_logo.svg.png'
+  },
+  'medicalalley.org': {
+    logo: 'https://unavatar.io/medicalalley.org',
+    wordmark: 'https://medicalalley.org/wp-content/themes/medicalalley/images/logo.png'
   },
   'wingify.com': {
     logo: 'https://vwo.com/img/vwo-logo.svg',
