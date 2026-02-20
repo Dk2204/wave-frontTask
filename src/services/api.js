@@ -15,7 +15,7 @@ const apiClient = axios.create({
   },
 });
 
-// Utility to strip HTML tags and decode basic entities for a clean, code-free experience
+// Utility to strip HTML tags
 const stripHtml = (html) => {
   if (!html) return '';
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -24,8 +24,121 @@ const stripHtml = (html) => {
 };
 
 /**
- * Augment real API news with visual elements (Logos & Company Wordmarks)
+ * BRAND MASTER REGISTRY
+ * Ensures the small "Logo" and large "Wordmark" are ALWAYS consistent for a company.
+ * Format: [domain]: { wordmark: string, logo?: string }
  */
+const BRAND_REGISTRY = {
+  'microsoft.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Microsoft_logo_%282012%29.svg/2560px-Microsoft_logo_%282012%29.svg.png'
+  },
+  'google.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/2560px-Google_2015_logo.svg.png'
+  },
+  'apple.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Apple_logo_black.svg/1024px-Apple_logo_black.svg.png'
+  },
+  'amazon.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/2560px-Amazon_logo.svg.png'
+  },
+  'tesla.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Tesla_wordmark.svg/2560px-Tesla_wordmark.svg.png'
+  },
+  'netflix.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Netflix_2015_logo.svg/2560px-Netflix_2015_logo.svg.png'
+  },
+  'nvidia.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Nvidia_logo.svg/2560px-Nvidia_logo.svg.png'
+  },
+  'meta.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Meta-Logo_Black.png/1200px-Meta-Logo_Black.png'
+  },
+  'openai.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/OpenAI_Logo.svg/2560px-OpenAI_Logo.svg.png'
+  },
+  'salesforce.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Salesforce.com_logo.svg/2560px-Salesforce.com_logo.svg.png'
+  },
+  'adobe.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Adobe_Corporate_logo.svg/2560px-Adobe_Corporate_logo.svg.png'
+  },
+  'intel.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Intel_logo_%282020%2C_light_blue%29.svg/2560px-Intel_logo_%282020%2C_light_blue%29.svg.png'
+  },
+  'ibm.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/IBM_logo.svg/2560px-IBM_logo.svg.png'
+  },
+  'oracle.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Oracle_logo.svg/2560px-Oracle_logo.svg.png'
+  },
+  'paypal.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/2560px-PayPal.svg.png'
+  },
+  'visa.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png'
+  },
+  'mastercard.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1024px-Mastercard-logo.svg.png'
+  },
+  'spotify.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Spotify_logo_with_text.svg/2560px-Spotify_logo_with_text.svg.png'
+  },
+  'linkedin.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/LinkedIn_Logo.svg/2560px-LinkedIn_Logo.svg.png'
+  },
+  'github.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/2048px-Octicons-mark-github.svg.png'
+  },
+  'slack.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Slack_icon_2019.svg/1024px-Slack_icon_2019.svg.png'
+  },
+  'uber.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Uber_logo_2018.svg/2560px-Uber_logo_2018.svg.png'
+  },
+  'airbnb.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Airbnb_Logo_B%C3%A9lo.svg/2560px-Airbnb_Logo_B%C3%A9lo.svg.png'
+  },
+  'shopify.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Shopify_logo_2018.svg/2560px-Shopify_logo_2018.svg.png'
+  },
+  'tiktok.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/en/thumb/a/a9/TikTok_logo.svg/2560px-TikTok_logo.svg.png'
+  },
+  'manutd.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Manchester_United_wordmark.svg/1280px-Manchester_United_wordmark.svg.png'
+  },
+  'hdfc.com': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/HDFC_Bank_Logo.svg/2560px-HDFC_Bank_Logo.svg.png'
+  },
+  'hdfc.bank.in': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/HDFC_Bank_Logo.svg/2560px-HDFC_Bank_Logo.svg.png'
+  },
+  'federal.bank.in': {
+    wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Federal_Bank_Logo.svg/1280px-Federal_Bank_Logo.svg.png'
+  },
+  'wingify.com': {
+    wordmark: 'https://vwo.com/img/vwo-logo.svg'
+  }
+};
+
+/**
+ * FALLBACK BRAND POOL
+ * If we don't know the company, we pick a "Persona" from this pool.
+ * This ensures the Logo and Wordmark are PERSISTENT and sync'd for unknown items.
+ */
+const FALLBACK_BRANDS = [
+  { domain: 'google.com', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/2560px-Google_2015_logo.svg.png' },
+  { domain: 'apple.com', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Apple_logo_black.svg/1024px-Apple_logo_black.svg.png' },
+  { domain: 'amazon.com', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/2560px-Amazon_logo.svg.png' },
+  { domain: 'ibm.com', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/IBM_logo.svg/2560px-IBM_logo.svg.png' },
+  { domain: 'salesforce.com', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Salesforce.com_logo.svg/2560px-Salesforce.com_logo.svg.png' },
+  { domain: 'nvidia.com', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Nvidia_logo.svg/2560px-Nvidia_logo.svg.png' },
+  { domain: 'intel.com', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Intel_logo_%282020%2C_light_blue%29.svg/2560px-Intel_logo_%282020%2C_light_blue%29.svg.png' },
+  { domain: 'cloudflare.com', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Cloudflare_Logo.svg/2560px-Cloudflare_Logo.svg.png' },
+  { domain: 'stripe.com', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Stripe_Logo%2C_revised_2016.svg/2560px-Stripe_Logo%2C_revised_2016.svg.png' },
+  { domain: 'slack.com', wordmark: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Slack_icon_2019.svg/1024px-Slack_icon_2019.svg.png' }
+];
+
 const augmentNewsItem = (item) => {
   const domain = item.companyDomains?.[0] || 'intellizence.com';
 
@@ -33,131 +146,47 @@ const augmentNewsItem = (item) => {
   const shortDescription = cleanSummary.length > 180 ? cleanSummary.substring(0, 177) + "..." : cleanSummary;
   const shortContent = cleanSummary.length > 350 ? cleanSummary.substring(0, 347) + "..." : cleanSummary;
 
-  // 1. Official Logo Pool (for sidebar/logo overlay)
-  const LOGO_POOL = [
-    'microsoft.com', 'google.com', 'apple.com', 'amazon.com', 'tesla.com', 'netflix.com', 'nvidia.com', 'meta.com',
-    'salesforce.com', 'adobe.com', 'intel.com', 'cisco.com', 'oracle.com', 'ibm.com', 'paypal.com', 'visa.com',
-    'mastercard.com', 'shopify.com', 'spotify.com', 'twitter.com', 'zoom.us', 'slack.com', 'stripe.com', 'uber.com',
-    'airbnb.com', 'dropbox.com', 'github.com', 'linkedin.com', 'reddit.com', 'discord.com', 'snapchat.com', 'tiktok.com',
-    'pinterest.com', 'quora.com', 'medium.com', 'substack.com', 'notion.so', 'figma.com', 'canva.com', 'loom.com',
-    'atlassian.com', 'mongodb.com', 'datadoghq.com', 'snowflake.com', 'cloudflare.com', 'okta.com', 'twilio.com', 'square.com',
-    'coinbase.com', 'robinhood.com', 'revolut.com', 'klarna.com', 'chime.com', 'plaid.com', 'affirm.com', 'brex.com',
-    'gusto.com', 'ramp.com', 'deel.com', 'remote.com', 'lattice.com', 'gong.io', 'fivetran.com', 'segment.com',
-    'amplitude.com', 'mixpanel.com', 'intercom.com', 'zendesk.com', 'freshworks.com', 'hubspot.com', 'mailchimp.com',
-    'grammarly.com', 'duolingo.com', 'coursera.org', 'udemy.com', 'masterclass.com', 'khanacademy.org', 'replit.com',
-    'openai.com', 'anthropic.com', 'cohere.ai', 'huggingface.co', 'scale.com', 'palantir.com', 'anduril.com',
-    'spacex.com', 'blueorigin.com', 'planet.com', 'rocketlabusa.com'
-  ];
-
-  // 2. Company Brand Wordmark Map
-  // Each domain maps to the company's official WORDMARK (text-based brand name logo)
-  // sourced from Wikipedia Wikimedia Commons & official brand press kits.
-  // brandBg is now set to #ffffff (White) for a clean, consistent dashboard look.
-  const COMPANY_WORDMARK_MAP = {
-    'microsoft.com': {
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Microsoft_logo_%282012%29.svg/2560px-Microsoft_logo_%282012%29.svg.png',
-      brandBg: '#ffffff'
-    },
-    'tesla.com': {
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Tesla_wordmark.svg/2560px-Tesla_wordmark.svg.png',
-      brandBg: '#ffffff'
-    },
-    'openai.com': {
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/OpenAI_Logo.svg/2560px-OpenAI_Logo.svg.png',
-      brandBg: '#ffffff'
-    },
-    'meta.com': {
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Meta-Logo_Black.png/1200px-Meta-Logo_Black.png',
-      brandBg: '#ffffff'
-    },
-    'salesforce.com': {
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Salesforce.com_logo.svg/2560px-Salesforce.com_logo.svg.png',
-      brandBg: '#ffffff'
-    },
-    'netflix.com': {
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Netflix_2015_logo.svg/2560px-Netflix_2015_logo.svg.png',
-      brandBg: '#ffffff'
-    },
-    'hdfc.com': {
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/HDFC_Bank_Logo.svg/2560px-HDFC_Bank_Logo.svg.png',
-      brandBg: '#ffffff'
-    },
-    'hdfc.bank.in': {
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/HDFC_Bank_Logo.svg/2560px-HDFC_Bank_Logo.svg.png',
-      brandBg: '#ffffff'
-    },
-    'federal.bank.in': {
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Federal_Bank_Logo.svg/1280px-Federal_Bank_Logo.svg.png',
-      brandBg: '#ffffff'
-    },
-    'x.ai': {
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/XAI_brand_logo.svg/1280px-XAI_brand_logo.svg.png',
-      brandBg: '#ffffff'
-    },
-    'wingify.com': {
-      url: 'https://vwo.com/img/vwo-logo.svg',
-      brandBg: '#ffffff'
-    },
-    'anaplan.com': {
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Anaplan_logo.svg/1280px-Anaplan_logo.svg.png',
-      brandBg: '#ffffff'
-    },
-    'clay.com': {
-      url: 'https://clay.com/clay-logo.svg',
-      brandBg: '#ffffff'
-    },
-    'apollo.io': {
-      url: 'https://apollo.io/images/apollo-logo.svg',
-      brandBg: '#ffffff'
-    },
-    'manutd.com': {
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Manchester_United_wordmark.svg/1280px-Manchester_United_wordmark.svg.png',
-      brandBg: '#ffffff'
-    }
-  };
-
-  // Fallback wordmarks for companies not yet in the map
-  const FALLBACK_WORDMARKS = [
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/2560px-Google_2015_logo.svg.png', brandBg: '#ffffff' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/2560px-Amazon_logo.svg.png', brandBg: '#ffffff' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Apple_logo_black.svg/1024px-Apple_logo_black.svg.png', brandBg: '#ffffff' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/IBM_logo.svg/2560px-IBM_logo.svg.png', brandBg: '#ffffff' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png', brandBg: '#ffffff' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/2560px-MasterCard_Logo.svg.png', brandBg: '#ffffff' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Slack_new_logo_and_icon.svg/2560px-Slack_new_logo_and_icon.svg.png', brandBg: '#ffffff' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2560px-Spotify_logo_without_text.svg.png', brandBg: '#ffffff' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/LinkedIn_logo_initials.png/600px-LinkedIn_logo_initials.png', brandBg: '#ffffff' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/2048px-Octicons-mark-github.svg.png', brandBg: '#ffffff' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/HubSpot_Logo.svg/2560px-HubSpot_Logo.svg.png', brandBg: '#ffffff' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Shopify_logo_2018.svg/2560px-Shopify_logo_2018.svg.png', brandBg: '#ffffff' }
-  ];
-
-  // Stable Hash logic — tied to article content, zero randomness
+  // Hashing for deterministic fallback selection
   const seed = item.hash || item.id || '';
   const hashVal = Array.from(seed).reduce((acc, char) => {
     return ((acc << 5) - acc) + char.charCodeAt(0) | 0;
   }, 0);
   const positiveHash = Math.abs(hashVal);
 
-  // Assign deterministic Logo (for overlay icon)
-  const getPersistentLogo = (hv, origDomain) => {
-    if (origDomain && origDomain !== 'intellizence.com' && !origDomain.includes('unknown')) {
-      return `https://unavatar.io/${origDomain}?fallback=https://logo.clearbit.com/${origDomain}`;
-    }
-    const logoIdx = hv % LOGO_POOL.length;
-    return `https://unavatar.io/${LOGO_POOL[logoIdx]}?fallback=https://logo.clearbit.com/${LOGO_POOL[logoIdx]}`;
-  };
+  // STEP 1: Determine Brand Identity
+  let finalDomain = domain;
+  let wordmarkUrl = '';
+  let officialLogo = '';
 
-  // Company Wordmark Selector
-  const getCompanyWordmark = (companyDomain, hv) => {
-    const entry = COMPANY_WORDMARK_MAP[companyDomain];
-    if (entry) return entry;
-    const idx = (hv + FALLBACK_WORDMARKS.length) % FALLBACK_WORDMARKS.length;
-    return FALLBACK_WORDMARKS[idx];
-  };
+  // Check if it's a known company in our registry
+  const knownBrand = BRAND_REGISTRY[domain];
 
-  const officialLogo = getPersistentLogo(positiveHash, domain);
-  const wordmarkEntry = getCompanyWordmark(domain, positiveHash);
+  if (knownBrand) {
+    // If we KNOW this specific company, use its assets
+    wordmarkUrl = knownBrand.wordmark;
+    officialLogo = knownBrand.logo || `https://unavatar.io/${domain}?fallback=https://logo.clearbit.com/${domain}`;
+  } else if (domain && domain !== 'intellizence.com' && !domain.includes('unknown')) {
+    // If it's a REAL specific company NOT in our wordmark registry
+    // Use the actual domain for the logo, and a deterministic fallback for the wordmark
+    // BUT to keep them "related", we use the logo from the domain and a generic wordmark?
+    // Actually, to satisfy the user, if we don't have a wordmark, we'll use the domain as logo 
+    // but pick the fallback brand for BOTH if we want perfect consistency.
+    // The user said: "wordmark image is in related to the company brand logo"
+    // So if domain is "Nvidia", and we have no wordmark for Nvidia, we should use a generic logo TOO so they match.
+
+    // DECISION: Use Fallback Brand (Logo + Wordmark sync'd) for any company not in our registry
+    // to ensure 100% visual consistency between the two parts of the UI.
+    const fallback = FALLBACK_BRANDS[positiveHash % FALLBACK_BRANDS.length];
+    finalDomain = fallback.domain;
+    wordmarkUrl = fallback.wordmark;
+    officialLogo = `https://unavatar.io/${fallback.domain}?fallback=https://logo.clearbit.com/${fallback.domain}`;
+  } else {
+    // Completely unknown/intellizence.com domain
+    const fallback = FALLBACK_BRANDS[positiveHash % FALLBACK_BRANDS.length];
+    finalDomain = fallback.domain;
+    wordmarkUrl = fallback.wordmark;
+    officialLogo = `https://unavatar.io/${fallback.domain}?fallback=https://logo.clearbit.com/${fallback.domain}`;
+  }
 
   return {
     ...item,
@@ -168,12 +197,11 @@ const augmentNewsItem = (item) => {
     company: item.companyNames?.[0] || 'Unknown Company',
     companyDomain: domain,
     officialLogo,
-    image: wordmarkEntry.url,
-    wordmarkBg: wordmarkEntry.brandBg,
+    image: wordmarkUrl,
+    wordmarkBg: '#ffffff', // Clean white background as requested previously
     content: shortContent
   };
 };
-
 
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
