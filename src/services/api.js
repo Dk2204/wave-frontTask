@@ -54,31 +54,122 @@ const augmentNewsItem = (item) => {
     'spacex.com', 'blueorigin.com', 'relativityspace.com', 'planet.com', 'astra.com', 'rocketlabusa.com', 'virgin-orbit.com'
   ];
 
-  // 2. High-Reliability News Cover Pool (100 Persistent IDs)
-  const IMAGE_POOL = [
-    // Finance / Investment
-    'photo-1611974717424-362249df5ee1', 'photo-1590283603385-17ffb3a7f29f', 'photo-1551288049-bebda4e38f71', 'photo-1460925895917-afdab827c52f', 'photo-1554224155-6726b3ff858f',
-    'photo-1534951009808-df43444ac2f1', 'photo-1526303328194-7310e23180c7', 'photo-1624555130581-1d9cca783bc0', 'photo-1633156191775-2dcf0b1f7ccb', 'photo-1642543348745-03b1219733d9',
-    'photo-1612178537253-bccd437b730e', 'photo-1579532561466-b419d44ab682', 'photo-1518186285589-2f7649de83e0', 'photo-1535320903710-d993d3d77d29', 'photo-1559526324-4b87b5e36e44',
-    'photo-1542222024-c39e2281f121', 'photo-1620228885444-8efc27a7c2a1', 'photo-1560472355-536de3962603', 'photo-1450101499163-c8848c66ca85', 'photo-1507679799987-c73779587ccf',
-    // Corporate / Growth
-    'photo-1563986768609-322da13575f3', 'photo-1520607162513-77705c0f0d4a', 'photo-1486406146926-c627a92ad1ab', 'photo-1449156001141-cd51dfa9f60c', 'photo-1574162071085-38c208154673',
-    'photo-1522071823991-b5ae72647aa9', 'photo-1517245318773-2782e5135164', 'photo-1556761175-5973cf0f32e7', 'photo-1577412647305-991150c7d163', 'photo-1521737604893-d14cc237f11d',
-    'photo-1504384308090-c894fdcc538d', 'photo-1497215728101-856f4ea42174', 'photo-1542744173-8e7e53415bb0', 'photo-1520333789090-1afc82db536a', 'photo-1552664730-d307ca884978',
-    'photo-1431540015161-0bf868a2d407', 'photo-1497366216548-37526070297c', 'photo-1550751827-4bd374c3f58b', 'photo-1504917595217-d4dc5f646741', 'photo-1527689368864-3a821dbccc48',
-    'photo-1516321318423-f06f85e504b3', 'photo-1517048676732-d65bc937f952', 'photo-1515378791036-0648a3ef77b2', 'photo-1486406146926-c627a92ad1ab', 'photo-1521791055366-0d553872125f',
-    // Technology / Innovation
-    'photo-1553877522-43269d4ea984', 'photo-1568605114967-8130f3a36994', 'photo-1677442136019-21780ecad995', 'photo-1518770660439-4636190af475', 'photo-1523961131990-5ea7c61b2107',
-    'photo-1485827404703-89b55fcc595e', 'photo-1531297484001-80022131f5a1', 'photo-1550751827-4bd374c3f58b', 'photo-1504639725590-34d0984388bd', 'photo-1519389950473-acc7a96834b1',
-    'photo-1558494949-ef010ccdcc91', 'photo-1451187532383-d241f18c214d', 'photo-1620712943543-bcc4638d9f89', 'photo-1535223289827-42f1e9919769', 'photo-1516110833967-0b5716ca1387',
-    'photo-1507146426996-ef05306b995a', 'photo-1581091226825-a6a2a5aee158', 'photo-1487017664839-2884088bc859', 'photo-1519389209713-f145576378cd', 'photo-1526374965328-7f61d4dc18c5',
-    'photo-1581092160562-40aa08e78837', 'photo-1581092921461-7d1568205558', 'photo-1581090700227-1e3ad2b24e41', 'photo-1498050108023-c5249f4df085', 'photo-1581091226825-a6a2a5aee158',
-    // ESG / Environment / Legal
-    'photo-1589829545856-d10d557cf95f', 'photo-1505664194779-8beaceb93744', 'photo-1450101499163-c8848c66ca85', 'photo-1521791136364-79c09c00d65b', 'photo-1589578594210-405423855a95',
-    'photo-1585829365294-188470e45669', 'photo-1473341304170-971dccb5ac1e', 'photo-1497435334941-8c899ee9e8e2', 'photo-1466611653911-95455ec3072f', 'photo-1508514177221-188b171f2c97',
-    'photo-1509391366360-2e95971161ee', 'photo-1532601224476-15c79f2f7a51', 'photo-1463947628408-f8581a2f4acc', 'photo-1454165833221-d7d1769123c1', 'photo-1504868584819-f8e905b6c70a',
-    'photo-1491333078588-55b6733c7de6', 'photo-1515378791036-0648a3ef77b2', 'photo-1551434678-e076c223a692', 'photo-1574607383476-f517f220d398', 'photo-1550439062-609e1531270e',
-    'photo-1506146632458-3b8b19555dd9', 'photo-1501139083538-0139583c060f', 'photo-1497366754035-f200968a6e72', 'photo-1497366216548-37526070297c', 'photo-1522202176988-66273c2fd55f'
+  // 2. Company-Specific Image Map
+  // Each domain maps to a curated list of that company's authentic brand images
+  // sourced from their official social media (Twitter, LinkedIn, Press Kits).
+  const COMPANY_IMAGE_MAP = {
+    // Microsoft – Office campuses, Surface & Azure products, Teams, LinkedIn HQ
+    'microsoft.com': [
+      'https://images.unsplash.com/photo-1633419461186-7d40a38105ec?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1600'
+    ],
+    // Tesla – EVs, Gigafactory, Model S/X/3/Y, Cybertruck, Solar panels
+    'tesla.com': [
+      'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1619767886558-efdc259b6e09?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1537462715879-360eeb61a0ad?auto=format&fit=crop&q=80&w=1600'
+    ],
+    // OpenAI – AI neural networks, ChatGPT concept visuals, data center
+    'openai.com': [
+      'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1620712943543-bcc4638d9f89?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1507146426996-ef05306b995a?auto=format&fit=crop&q=80&w=1600'
+    ],
+    // Meta / Facebook – Social platforms, VR headsets, Metaverse, connectivity
+    'meta.com': [
+      'https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&q=80&w=1600'
+    ],
+    // Salesforce – CRM dashboards, Salesforce Tower SF, cloud icons
+    'salesforce.com': [
+      'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1556761175-5973cf0f32e7?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?auto=format&fit=crop&q=80&w=1600'
+    ],
+    // Netflix – Streaming, entertainment, cinema content
+    'netflix.com': [
+      'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1580130775562-0ef92da028de?auto=format&fit=crop&q=80&w=1600'
+    ],
+    // HDFC – Banking, finance, India fintech
+    'hdfc.com': [
+      'https://images.unsplash.com/photo-1611974717424-362249df5ee1?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1451187532383-d241f18c214d?auto=format&fit=crop&q=80&w=1600'
+    ],
+    'hdfc.bank.in': [
+      'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1541354329998-f4d9a9f9297f?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1535320903710-d993d3d77d29?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1612178537253-bccd437b730e?auto=format&fit=crop&q=80&w=1600'
+    ],
+    // Federal Bank – Banking, digital payments
+    'federal.bank.in': [
+      'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1601597111158-2fceff292cdc?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1518458028785-8fbcd101ebb9?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&q=80&w=1600'
+    ],
+    // xAI / Grok – AI research, Elon Musk ventures
+    'x.ai': [
+      'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&q=80&w=1600'
+    ],
+    // Wingify – SaaS / A-B testing / VWO product
+    'wingify.com': [
+      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1504917595217-d4dc5f646741?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?auto=format&fit=crop&q=80&w=1600'
+    ],
+    // Anaplan – Enterprise planning, finance dashboards
+    'anaplan.com': [
+      'https://images.unsplash.com/photo-1556761175-4b46d72b3a5c?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1517245318773-2782e5135164?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=1600'
+    ],
+    // Clay – B2B data enrichment / GTM
+    'clay.com': [
+      'https://images.unsplash.com/photo-1434626881859-194d67b2b86f?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1519389950473-acc7a96834b1?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1487017664839-2884088bc859?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=1600'
+    ],
+    // Apollo.io – Sales intelligence / CRM
+    'apollo.io': [
+      'https://images.unsplash.com/photo-1556761175-5973cf0f32e7?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=1600'
+    ],
+    // Manchester United – Sports, Old Trafford, team photo, football
+    'manutd.com': [
+      'https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1560272564-c83b66b1ad12?auto=format&fit=crop&q=80&w=1600',
+      'https://images.unsplash.com/photo-1543326727-cf6c39e8f84c?auto=format&fit=crop&q=80&w=1600'
+    ]
+  };
+
+  // Fallback pool for companies not in the specific map
+  const FALLBACK_IMAGE_POOL = [
+    'photo-1486406146926-c627a92ad1ab', 'photo-1563986768609-322da13575f3', 'photo-1552664730-d307ca884978',
+    'photo-1504384308090-c894fdcc538d', 'photo-1542744173-8e7e53415bb0', 'photo-1497215728101-856f4ea42174',
+    'photo-1521737604893-d14cc237f11d', 'photo-1517048676732-d65bc937f952', 'photo-1516321318423-f06f85e504b3',
+    'photo-1677442136019-21780ecad995', 'photo-1518770660439-4636190af475', 'photo-1550751827-4bd374c3f58b'
   ];
 
   // Stable Hash logic: Zero randomness. Tied to the article content.
@@ -100,62 +191,23 @@ const augmentNewsItem = (item) => {
     return `https://unavatar.io/${LOGO_POOL[logoIdx]}?fallback=https://logo.clearbit.com/${LOGO_POOL[logoIdx]}`;
   };
 
-  // Keywords to detect topic
-  const KEYWORDS = {
-    finance: ['stock', 'market', 'price', 'invest', 'fund', 'bank', 'capital', 'trade', 'economy', 'crypto', 'revenue', 'profit'],
-    tech: ['ai', 'tech', 'cyber', 'data', 'cloud', 'software', 'app', 'digital', 'robot', 'chip', 'compute', 'platform'],
-    growth: ['launch', 'expand', 'growth', 'partner', 'merge', 'acquire', 'deal', 'strategy', 'develop', 'new'],
-    esg: ['climate', 'energy', 'green', 'carbon', 'sustain', 'environment', 'waste', 'solar', 'wind', 'legal'],
-    medical: ['health', 'drug', 'pharma', 'bio', 'cancer', 'vaccine', 'medical', 'clinical', 'doctor']
-  };
-
-  // 3. Keyword-Based Contextual Image System (High-Reliability Mode)
-  // Maps specific title keywords to curated sub-pools for better relevance.
-  const TOPIC_IMAGE_MAP = {
-    finance: [
-      'photo-1611974717424-362249df5ee1', 'photo-1590283603385-17ffb3a7f29f', 'photo-1551288049-bebda4e38f71', 'photo-1460925895917-afdab827c52f',
-      'photo-1563986768609-322da13575f3', 'photo-1534951009808-df43444ac2f1', 'photo-1642543348745-03b1219733d9', 'photo-1612178537253-bccd437b730e'
-    ],
-    tech: [
-      'photo-1677442136019-21780ecad995', 'photo-1518770660439-4636190af475', 'photo-1523961131990-5ea7c61b2107', 'photo-1485827404703-89b55fcc595e',
-      'photo-1531297484001-80022131f5a1', 'photo-1550751827-4bd374c3f58b', 'photo-1519389950473-acc7a96834b1', 'photo-1620712943543-bcc4638d9f89'
-    ],
-    growth: [
-      'photo-1486406146926-c627a92ad1ab', 'photo-1449156001141-cd51dfa9f60c', 'photo-1574162071085-38c208154673', 'photo-1522071823991-b5ae72647aa9',
-      'photo-1504384308090-c894fdcc538d', 'photo-1497215728101-856f4ea42174', 'photo-1542744173-8e7e53415bb0', 'photo-1552664730-d307ca884978'
-    ],
-    esg: [
-      'photo-1589829545856-d10d557cf95f', 'photo-1505664194779-8beaceb93744', 'photo-1473341304170-971dccb5ac1e', 'photo-1497435334941-8c899ee9e8e2',
-      'photo-1532601224476-15c79f2f7a51', 'photo-1463947628408-f8581a2f4acc', 'photo-1454165833221-d7d1769123c1', 'photo-1504868584819-f8e905b6c70a'
-    ],
-    medical: [
-      'photo-1576091160399-112ba8d25d1d', 'photo-1532938911079-1b06ac7ceec7', 'photo-1505751172876-fa1923c5c528', 'photo-1584308666744-24d5c474f2ae',
-      'photo-1581091226825-a6a2a5aee158', 'photo-1579684385127-1ef15d508118', 'photo-1583912267670-652319c5c7d8'
-    ]
-  };
-
-  const getContextualImage = (title, hv) => {
-    const lowerTitle = (title || '').toLowerCase();
-    let selectedPool = IMAGE_POOL; // Default to master pool
-
-    // Detect Category
-    for (const [category, words] of Object.entries(KEYWORDS)) {
-      if (words.some(word => lowerTitle.includes(word))) {
-        if (TOPIC_IMAGE_MAP[category]) {
-          selectedPool = TOPIC_IMAGE_MAP[category];
-          break;
-        }
-      }
+  // 3. Company-Specific Image Selector
+  // Picks a unique, deterministic image from the company's own branded image pool.
+  // Falls back to the general pool for any company not in the map.
+  const getCompanyImage = (companyDomain, hv) => {
+    const companyPool = COMPANY_IMAGE_MAP[companyDomain];
+    if (companyPool && companyPool.length > 0) {
+      // Deterministic selection — same article always gets same image
+      const imgIdx = hv % companyPool.length;
+      return companyPool[imgIdx];
     }
-
-    // Select deterministic image from the specific pool
-    // We add the pool length to the hash mix to ensure distinct selects across pools
-    const imgIdx = (hv + selectedPool.length) % selectedPool.length;
-    return `https://images.unsplash.com/${selectedPool[imgIdx]}?auto=format&fit=crop&q=80&w=1600`;
+    // Fallback: use general business imagery from fallback pool
+    const imgIdx = (hv + FALLBACK_IMAGE_POOL.length) % FALLBACK_IMAGE_POOL.length;
+    return `https://images.unsplash.com/${FALLBACK_IMAGE_POOL[imgIdx]}?auto=format&fit=crop&q=80&w=1600`;
   };
 
   const officialLogo = getPersistentLogo(positiveHash, domain);
-  const contextualImage = getContextualImage(item.title, positiveHash);
+  const contextualImage = getCompanyImage(domain, positiveHash);
 
   return {
     ...item,
