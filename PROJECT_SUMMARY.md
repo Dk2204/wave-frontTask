@@ -39,6 +39,12 @@ A **premium, production-ready React application** for Intellizence with the foll
 - ✅ Empty states and loading indicators
 - ✅ Smooth page transitions
 
+### 🏷️ Brand Logo Synchronization
+- ✅ **Verified Official Assets**: Integrated official, high-resolution logos and wordmarks for 40+ major brands including Meta, Hyundai, MoneySuperMarket, Royal Challengers Bengaluru, and more.
+- ✅ **Perfect Pairing**: Ensures small icons (logos) and large text-based Wordmarks are always perfectly synchronized across desktop and mobile views.
+- ✅ **Live API Priority**: News and articles are sourced strictly from the Live API Response to ensure 100% authentic, real-time intelligence.
+- ✅ **Multi-Domain Mapping**: Comprehensive mapping for sub-brands and aliases (e.g., facebook.com → Meta, tim.it → Telecom Italia).
+
 ---
 
 ## 📁 Project Structure

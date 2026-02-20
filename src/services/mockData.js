@@ -3,8 +3,7 @@ export const MOCK_SUBSCRIPTIONS = {
         companies: [
             "microsoft.com", "wingify.com", "openai.com", "tesla.com", "x.ai",
             "salesforce.com", "anaplan.com", "clay.com", "apollo.io", "hdfc.com",
-            "hdfc.bank.in", "federal.bank.in", "meta.com", "manutd.com", "netflix.com",
-            "nvidia.com", "apple.com", "amazon.com", "google.com"
+            "hdfc.bank.in", "federal.bank.in", "meta.com", "manutd.com", "netflix.com"
         ],
         triggers: [
             "KW_518", "KW_519", "KW_520", "KW_534", "KW_535", "KW_666", "KW_502", "KW_536",

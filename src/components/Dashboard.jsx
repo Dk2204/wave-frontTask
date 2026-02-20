@@ -12,302 +12,90 @@ import {
     FiExternalLink,
     FiClock,
     FiArrowRight,
-    FiUser
+    FiUser,
+    FiZap
 } from 'react-icons/fi';
 import { format, parseISO, isValid } from 'date-fns';
 import { authAPI, subscriptionsAPI, newsAPI } from '../services/api';
-import { getTriggerName, MAPPED_CHANNELS, TRIGGER_CATEGORY_MAPPING } from '../services/triggerMapping';
+import { getTriggerName, TRIGGER_CATEGORY_MAPPING } from '../services/triggerMapping';
 import './Dashboard.css';
 
-/**
- * Robust date formatting to prevent white-screen crashes on malformed data
- */
 const formatDateSafe = (dateObj, formatStr) => {
-    if (!dateObj) return 'Never';
+    if (!dateObj) return 'Recent';
     try {
         const date = (typeof dateObj === 'string') ? parseISO(dateObj) : dateObj;
-        if (!isValid(date)) return 'Invalid Date';
-        return format(date, formatStr);
+        return isValid(date) ? format(date, formatStr) : 'Recent';
     } catch (e) {
-        console.error("Date formatting error:", e);
-        return 'Invalid Date';
+        return 'Recent';
     }
 };
 
 const NewsCard = ({ item, index, onNewsClick }) => (
     <article
-        className="news-card glass-effect animate-fadeIn clickable-card"
+        className="news-card"
         style={{ animationDelay: `${index * 0.05}s` }}
         onClick={(e) => onNewsClick(e, item)}
     >
-        <div className="news-card-media" style={{ background: item.wordmarkBg || '#0f172a' }}>
-            <img
-                src={item.image}
-                alt={item.title}
-                className="news-card-img"
-                onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Microsoft_logo_%282012%29.svg/1024px-Microsoft_logo_%282012%29.svg.png';
-                }}
-            />
+        <div className="news-card-media">
+            <img src={item.image} alt={item.title} className="news-card-img" loading="lazy" />
             <div className="news-card-logo-overlay">
-                <img
-                    src={item.officialLogo}
-                    alt="Logo"
-                    className="news-card-logo"
-                    onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.style.display = 'none';
-                    }}
-                />
+                <img src={item.officialLogo} alt={item.company} className="news-card-logo" />
             </div>
         </div>
-
         <div className="news-card-body">
-            <div className="news-card-header">
-                <span className="company-badge">
-                    {MAPPED_CHANNELS[item.companyDomain] || item.company || item.companyDomain}
+            <div className="company-badge">{item.company}</div>
+            <h3 className="news-title">{item.title}</h3>
+            <p className="news-description">{item.description}</p>
+            <div className="news-card-footer">
+                <span className="date-badge">
+                    <FiClock /> {formatDateSafe(item.announcedDate, 'MMM dd, yyyy')}
                 </span>
-                {item.announcedDate && (
-                    <span className="date-badge">
-                        <FiClock />
-                        {formatDateSafe(item.announcedDate, 'MMM dd, yyyy')}
-                    </span>
-                )}
-            </div>
-
-            <h3 className="news-title">{item.title || 'Untitled'}</h3>
-
-            {item.description && (
-                <p className="news-description">{item.description}</p>
-            )}
-
-            {item.triggers && item.triggers.length > 0 && (
-                <div className="news-triggers">
-                    {item.triggers.slice(0, 2).map((trigger, idx) => (
-                        <button
-                            key={idx}
-                            className="news-trigger-tag btn-trigger-link"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onNewsClick(e, item);
-                            }}
-                        >
-                            <FiTrendingUp />
-                            {getTriggerName(trigger)}
-                        </button>
-                    ))}
-                    {item.triggers.length > 2 && <span className="more-triggers">+{item.triggers.length - 2}</span>}
-                </div>
-            )}
-
-            <div className="news-card-footer-simple">
-                <button className="news-read-more-btn">
-                    Read Full Intel
-                    <FiArrowRight />
-                </button>
+                <FiArrowRight style={{ color: 'var(--accent-color)' }} />
             </div>
         </div>
     </article>
 );
 
 const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, onPendingItemCleared }) => {
-    const [loading, setLoading] = useState(false);
-    const [subscriptions, setSubscriptions] = useState(null);
     const [news, setNews] = useState([]);
-    const [filters, setFilters] = useState({
-        startDate: '',
-        endDate: '',
-        companyDomain: '',
-        triggers: []
-    });
-    const [showFilters, setShowFilters] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [signalSource, setSignalSource] = useState('connecting');
+    const [lastSync, setLastSync] = useState(null);
     const [selectedNews, setSelectedNews] = useState(null);
-    const [canShowLogin, setCanShowLogin] = useState(false);
-    const [lastUpdated, setLastUpdated] = useState(() => {
-        const saved = localStorage.getItem('iz_last_sync_time');
-        if (!saved || saved === 'Never') return new Date();
-        const d = new Date(saved);
-        return isValid(d) ? d : new Date();
-    });
-    const [availableCompanies, setAvailableCompanies] = useState([]);
-    const [availableCategories, setAvailableCategories] = useState([]);
-    const touchStartX = useRef(null);
 
-    const handleTouchStart = (e) => {
-        touchStartX.current = e.touches[0].clientX;
-    };
+    const fetchNews = async () => {
+        setLoading(true);
+        try {
+            const data = await newsAPI.getCompanyNews();
+            const newsItems = data?.news || [];
 
-    const handleTouchEnd = (e) => {
-        if (!touchStartX.current) return;
-        const touchEndX = e.changedTouches[0].clientX;
-        const diff = touchStartX.current - touchEndX;
+            const sortedNews = Array.isArray(newsItems)
+                ? [...newsItems].sort((a, b) => new Date(b.announcedDate) - new Date(a.announcedDate))
+                : [];
 
-        // Detect left swipe (threshold 50px)
-        if (diff > 50) {
-            setShowFilters(false);
+            setNews(sortedNews);
+            setSignalSource(data?.source || 'live');
+            setLastSync(new Date());
+        } catch (error) {
+            console.error('Signal failure:', error);
+            setSignalSource('error');
+        } finally {
+            setLoading(false);
         }
-        touchStartX.current = null;
     };
 
-    // Fetch data on mount
     useEffect(() => {
-        const init = async () => {
-            await fetchSubscriptions();
-            await fetchNews(true); // Hydrate filters on initial load
-        };
-        init();
-
-        // Delay the login option to show dashboard first
-        const timer = setTimeout(() => {
-            setCanShowLogin(true);
-        }, 1500);
-        return () => clearTimeout(timer);
+        fetchNews();
     }, []);
 
-    // Handle opening pending item after login
+    // Handle Deep Linking if a news item was clicked while logged out
     useEffect(() => {
         if (isAuthenticated && pendingNewsItem) {
             setSelectedNews(pendingNewsItem);
             onPendingItemCleared();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }, [isAuthenticated, pendingNewsItem, onPendingItemCleared]);
-
-    // Fetch news when filters change
-    useEffect(() => {
-        fetchNews();
-    }, [filters]);
-
-    const fetchSubscriptions = async () => {
-        try {
-            const data = await subscriptionsAPI.getSubscriptions();
-            setSubscriptions(data);
-        } catch (error) {
-            console.error('Failed to fetch subscriptions:', error);
-        }
-    };
-
-    const fetchNews = async (isInitial = false) => {
-        setLoading(true);
-        try {
-            // Flatten selected categories into all associated trigger codes
-            const selectedTriggerCodes = [];
-            filters.triggers.forEach(category => {
-                Object.keys(TRIGGER_CATEGORY_MAPPING).forEach(code => {
-                    if (TRIGGER_CATEGORY_MAPPING[code].category === category) {
-                        selectedTriggerCodes.push(code);
-                    }
-                });
-            });
-
-            const filterPayload = {
-                ...(filters.startDate && { startDate: filters.startDate }),
-                ...(filters.endDate && { endDate: filters.endDate }),
-                ...(filters.companyDomain && { companyDomain: filters.companyDomain }),
-                // Map local category selection to API trigger codes
-                ...(selectedTriggerCodes.length > 0 && { triggerCodes: selectedTriggerCodes })
-            };
-
-            const data = await newsAPI.getCompanyNews(filterPayload);
-            const newsItems = data?.news || data || [];
-            setNews(newsItems);
-
-            // Sync the timestamp with the API's persistent state
-            const syncTime = localStorage.getItem('iz_last_sync_time');
-            if (syncTime) {
-                setLastUpdated(new Date(syncTime));
-            } else {
-                setLastUpdated(new Date());
-            }
-
-            // Update available filters IF this is the initial load OR if no filters are active
-            // This ensures all options remain visible even when a specific filter is selected later
-            if (isInitial || (!filters.companyDomain && filters.triggers.length === 0 && !filters.startDate && !filters.endDate)) {
-                const domainsWithNews = new Set(newsItems.map(item => item.companyDomain));
-                const categoriesWithNews = new Set();
-                newsItems.forEach(item => {
-                    if (item.triggers) {
-                        item.triggers.forEach(t => {
-                            const cat = TRIGGER_CATEGORY_MAPPING[t]?.category;
-                            if (cat) categoriesWithNews.add(cat);
-                        });
-                    }
-                });
-
-                if (subscriptions) {
-                    setAvailableCompanies((subscriptions?.config?.companies || []).filter(domain => domainsWithNews.has(domain)));
-                } else {
-                    setAvailableCompanies(Array.from(domainsWithNews));
-                }
-
-                // Always show ALL 24 trigger categories from the mapping (not just those with news)
-                const allCategories = [...new Set(
-                    Object.values(TRIGGER_CATEGORY_MAPPING).map(v => v.category)
-                )].sort();
-                setAvailableCategories(allCategories);
-            }
-        } catch (error) {
-            console.error('Failed to fetch news:', error);
-            setNews([]);
-        } finally {
-            setLoading(false);
-            setLastUpdated(new Date());
-        }
-    };
-
-    const handleLogout = () => {
-        onLogout();
-    };
-
-    const handleFilterChange = (key, value) => {
-        setFilters(prev => ({ ...prev, [key]: value }));
-    };
-
-    const toggleTrigger = (trigger) => {
-        setFilters(prev => ({
-            ...prev,
-            triggers: prev.triggers.includes(trigger)
-                ? prev.triggers.filter(t => t !== trigger)
-                : [...prev.triggers, trigger]
-        }));
-    };
-
-    const clearFilters = () => {
-        setFilters({
-            startDate: '',
-            endDate: '',
-            companyDomain: '',
-            triggers: []
-        });
-    };
-
-    const filteredNews = news.filter(item => {
-        if (!searchQuery) return true;
-        const query = searchQuery.toLowerCase();
-        return (
-            item.title?.toLowerCase().includes(query) ||
-            item.description?.toLowerCase().includes(query) ||
-            item.company?.toLowerCase().includes(query)
-        );
-    });
-
-    // Grouping logic: Current Trend vs Later Articles
-    const now = new Date();
-    const trendingThreshold = 48 * 60 * 60 * 1000; // 48 hours in ms
-
-    const trendingNews = filteredNews.filter(item => {
-        const itemDate = new Date(item.announcedDate);
-        return (now - itemDate) <= trendingThreshold;
-    });
-
-    const laterNews = filteredNews.filter(item => {
-        const itemDate = new Date(item.announcedDate);
-        return (now - itemDate) > trendingThreshold;
-    });
-
-    const newsContentRef = useRef(null);
 
     const handleNewsClick = (e, item) => {
         e.preventDefault();
@@ -318,427 +106,150 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
         setSelectedNews(item);
     };
 
-    const uniqueCompanies = availableCompanies;
-    const uniqueTriggers = availableCategories;
+    const filteredNews = useMemo(() => {
+        const query = searchQuery.toLowerCase();
+        return news.filter(item =>
+            !query ||
+            item.title?.toLowerCase().includes(query) ||
+            item.company?.toLowerCase().includes(query) ||
+            item.description?.toLowerCase().includes(query)
+        );
+    }, [news, searchQuery]);
 
     return (
         <div className="dashboard-container">
-            {/* Header */}
-            <header className="dashboard-header glass-effect">
-                <div className="container">
-                    <div className="header-content">
-                        <div className="header-left">
-                            {isAuthenticated && (
-                                <>
-                                    <button
-                                        onClick={() => setShowFilters(!showFilters)}
-                                        className="btn-icon"
-                                        title="Toggle Filters"
-                                    >
-                                        <FiFilter />
-                                    </button>
-                                    <div className="header-sync-container">
-                                        <button
-                                            className={`sync-btn ${loading ? 'syncing' : ''}`}
-                                            onClick={() => fetchNews(true)}
-                                            disabled={loading}
-                                            title="Sync live news from the feed"
-                                        >
-                                            <FiRefreshCw className={loading ? 'spin' : ''} />
-                                        </button>
-                                        <div className="sync-info">
-                                            <span className="sync-label">Last Updated:</span>
-                                            <span className="sync-time show-pulse">
-                                                {formatDateSafe(lastUpdated, 'h:mm a')}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-
-                        <div className="header-center">
-                            <div className="logo-section animate-fadeIn">
-                                <div className="logo-mini">IZ</div>
-                                <h1 className="dashboard-title gradient-text">Intellizence News</h1>
-                            </div>
-                        </div>
-
-                        <div className="header-right">
-                            {isAuthenticated ? (
-                                <button
-                                    onClick={handleLogout}
-                                    className="btn-logout"
-                                >
-                                    <FiLogOut />
-                                    <span>Logout</span>
-                                </button>
-                            ) : canShowLogin && (
-                                <>
-                                    <button className="btn-login-signup animate-fadeIn desktop-only" onClick={() => onLoginClick(null, 'signup')}>
-                                        Login / Sign Up
-                                    </button>
-                                    <button className="btn-profile-mobile animate-fadeIn mobile-only" onClick={() => onLoginClick(null, 'signup')} title="Login / Sign Up">
-                                        <FiUser />
-                                    </button>
-                                </>
-                            )}
-                        </div>
+            <header className="dashboard-header">
+                <div className="header-left">
+                    <div className="logo-section">
+                        <div className="logo-mini">IZ</div>
+                        <h1 className="dashboard-title">
+                            <span className="gradient-text">Intellizence</span> Signal Hub
+                        </h1>
                     </div>
+                </div>
+
+                <div className="header-right">
+                    <div className={`live-status-badge ${signalSource}`}>
+                        <div className={`status-dot ${signalSource === 'live' ? 'pulse' : ''}`}
+                            style={{ backgroundColor: signalSource === 'live' ? '#4ade80' : signalSource === 'fallback' ? '#f59e0b' : '#ef4444' }}
+                        />
+                        <span>{signalSource === 'live' ? 'LIVE FEED' : signalSource === 'fallback' ? 'OFFLINE BUFFER' : 'SIGNAL ERROR'}</span>
+                    </div>
+                    <button className="sync-btn" onClick={fetchNews} disabled={loading} title="Sync Live News">
+                        <FiRefreshCw className={loading ? 'spin' : ''} />
+                    </button>
+                    {isAuthenticated ? (
+                        <button className="logout-btn" onClick={onLogout}>
+                            <FiLogOut /> <span>LOGOUT</span>
+                        </button>
+                    ) : (
+                        <button className="sync-btn" onClick={() => onLoginClick()}>
+                            <FiUser /> <span>LOGIN</span>
+                        </button>
+                    )}
                 </div>
             </header>
 
-            <div className="dashboard-main container">
-                {/* Filters Panel - Only visible for authenticated users when toggled */}
-                {isAuthenticated && showFilters && (
-                    <aside
-                        className="filters-panel glass-effect animate-slideDown"
-                        onTouchStart={handleTouchStart}
-                        onTouchEnd={handleTouchEnd}
-                    >
-                        <div className="filters-header">
-                            <h2 className="filters-title">
-                                <FiFilter />
-                                Filters
-                            </h2>
-                            <div className="filters-actions">
-                                {(filters.startDate || filters.endDate || filters.companyDomain || filters.triggers.length > 0) && (
-                                    <button onClick={clearFilters} className="btn-clear" title="Clear All">
+            <main className="dashboard-main">
+                <div className="news-content">
+                    <div className="container">
+                        <div className="welcome-banner animate-fadeIn">
+                            <div className="welcome-text">
+                                <h1>Intelligence Dashboard</h1>
+                                <p>Real-time corporate signals and strategic disruptions across your tracked portfolio.</p>
+                            </div>
+                            <div className="welcome-badge-group">
+                                <div className="premium-badge">
+                                    <FiZap /> <span>UNIVERSAL ACCESS</span>
+                                </div>
+                                <div style={{ fontSize: '11px', fontWeight: '800', opacity: '0.8', textAlign: 'right' }}>
+                                    LAST SYNC: {lastSync ? format(lastSync, 'HH:mm:ss') : '--:--:--'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="news-toolbar">
+                            <div className="search-box">
+                                <FiSearch className="search-icon" />
+                                <input
+                                    type="text"
+                                    className="search-input-field"
+                                    placeholder="Scan intelligence reports..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                                {searchQuery && (
+                                    <button className="clear-btn" onClick={() => setSearchQuery('')} style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', cursor: 'pointer' }}>
                                         <FiX />
-                                        <span>Clear All</span>
                                     </button>
                                 )}
-                                <button
-                                    onClick={() => setShowFilters(false)}
-                                    className="btn-icon-close mobile-only"
-                                    title="Close Filters"
-                                >
-                                    <FiX />
-                                </button>
                             </div>
-                        </div>
-
-                        <div className="filters-content">
-                            {/* Date Range Filter */}
-                            <div className="filter-group">
-                                <label className="filter-label">
-                                    <FiCalendar />
-                                    Announced Date Range
-                                </label>
-                                <div className="date-range">
-                                    <input
-                                        type="date"
-                                        value={filters.startDate}
-                                        onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                                        className="filter-input"
-                                        placeholder="Start Date"
-                                    />
-                                    <span className="date-separator">to</span>
-                                    <input
-                                        type="date"
-                                        value={filters.endDate}
-                                        onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                                        className="filter-input"
-                                        placeholder="End Date"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Company Domain Filter */}
-                            <div className="filter-group">
-                                <label className="filter-label">
-                                    <FiTag />
-                                    Company Domain
-                                </label>
-                                <div className="select-wrapper">
-                                    <select
-                                        value={filters.companyDomain}
-                                        onChange={(e) => handleFilterChange('companyDomain', e.target.value)}
-                                        className="filter-select"
-                                    >
-                                        <option value="">All Domains</option>
-                                        {uniqueCompanies.map(domain => (
-                                            <option key={domain} value={domain}>
-                                                {MAPPED_CHANNELS[domain] || domain}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <FiChevronDown className="select-icon" />
-                                </div>
-                            </div>
-
-                            {/* Triggers/Signals Filter */}
-                            <div className="filter-group">
-                                <label className="filter-label">
-                                    <FiTrendingUp />
-                                    Triggers / Signals
-                                </label>
-                                <div className="triggers-list">
-                                    {uniqueTriggers.length > 0 ? (
-                                        uniqueTriggers.map(trigger => (
-                                            <button
-                                                key={trigger}
-                                                onClick={() => toggleTrigger(trigger)}
-                                                className={`trigger-chip ${filters.triggers.includes(trigger) ? 'active' : ''}`}
-                                                title={trigger}
-                                            >
-                                                {trigger}
-                                            </button>
-                                        ))
-                                    ) : (
-                                        <p className="empty-state">No triggers available</p>
-                                    )}
+                            <div className="stats-bar-minimal">
+                                <div className="stat-item-small">
+                                    <span className="stat-label-tiny">TOTAL REPORTS</span>
+                                    <span className="stat-value-small">{filteredNews.length}</span>
                                 </div>
                             </div>
                         </div>
-                    </aside>
-                )}
 
-                {/* News Content */}
-                <main className="news-content" ref={newsContentRef}>
-                    {isAuthenticated && (
-                        <div className="welcome-banner glass-effect animate-fadeIn">
-                            <div className="welcome-text">
-                                <h2>Welcome to your Open Intelligence Hub</h2>
-                                <p>Enjoy full access to premium news tracking, advanced market filters, and live trigger signals.</p>
+                        {loading && news.length === 0 ? (
+                            <div className="loading-state" style={{ textAlign: 'center', padding: '100px 0' }}>
+                                <FiRefreshCw className="spin" size={48} style={{ color: 'var(--accent-color)', marginBottom: '16px' }} />
+                                <p style={{ fontWeight: '700', color: 'var(--text-muted)' }}>Synchronizing with Intelligence Feed...</p>
                             </div>
-                            <div className="welcome-stats">
-                                <div className="stat-pill">Universal Access</div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Toolbar: Search + Stats */}
-                    <div className="news-toolbar animate-fadeIn">
-                        <div className="search-box">
-                            <FiSearch className="search-icon" />
-                            <input
-                                type="text"
-                                className="search-input-field"
-                                placeholder=""
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                            {searchQuery && (
-                                <button className="clear-search" onClick={() => setSearchQuery('')}>
-                                    <FiX />
-                                </button>
-                            )}
-                        </div>
-                        <div className="stats-bar-minimal">
-                            <div className="stat-item-small">
-                                <span className="stat-label-tiny">TOTAL NEWS</span>
-                                <span className="stat-value-small">{filteredNews.length}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Filter Active Options Bar */}
-                    {(filters.startDate || filters.endDate || filters.companyDomain || filters.triggers.length > 0) && (
-                        <div className="filter-active-bar animate-fadeIn">
-                            <span className="active-bar-label">Active Filters:</span>
-                            <div className="active-chips">
-                                {filters.companyDomain && (
-                                    <span className="active-chip">
-                                        {filters.companyDomain}
-                                        <FiX onClick={() => handleFilterChange('companyDomain', '')} />
-                                    </span>
-                                )}
-                                {filters.triggers.map(t => (
-                                    <span key={t} className="active-chip">
-                                        {t}
-                                        <FiX onClick={() => toggleTrigger(t)} />
-                                    </span>
+                        ) : (
+                            <div className="news-grid">
+                                {filteredNews.map((item, index) => (
+                                    <NewsCard key={item.id} item={item} index={index} onNewsClick={handleNewsClick} />
                                 ))}
-                                {(filters.startDate || filters.endDate) && (
-                                    <span className="active-chip">
-                                        Date Range
-                                        <FiX onClick={() => { handleFilterChange('startDate', ''); handleFilterChange('endDate', ''); }} />
-                                    </span>
-                                )}
-                                <button className="btn-clear-all-small" onClick={clearFilters}>
-                                    Clear All
-                                </button>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* Secondary Stats */}
-                    {filters.triggers.length > 0 && (
-                        <div className="stats-bar animate-fadeIn">
-                            <div className="stat-item">
-                                <span className="stat-label">Active Filters</span>
-                                <span className="stat-value gradient-text">{filters.triggers.length}</span>
+                        {!loading && filteredNews.length === 0 && (
+                            <div className="empty-state-large" style={{ textAlign: 'center', padding: '100px 0', background: 'white', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+                                <FiSearch size={48} style={{ color: 'var(--border-color)', marginBottom: '16px' }} />
+                                <h3 style={{ fontWeight: '800', marginBottom: '8px' }}>No matching intelligence found</h3>
+                                <p style={{ color: 'var(--text-muted)' }}>Try adjusting your search query or reset filters.</p>
                             </div>
-                        </div>
-                    )}
-
-                    {/* News Sections */}
-                    {loading ? (
-                        <div className="loading-state">
-                            <FiRefreshCw className="spinner large" />
-                            <p>Loading news...</p>
-                        </div>
-                    ) : (
-                        <div className="news-sections-container">
-                            {/* Current Trend Section */}
-                            {trendingNews.length > 0 && (
-                                <section className="news-section-group animate-fadeIn">
-                                    <h2 className="section-title-tag">
-                                        <FiTrendingUp />
-                                        Current Trend
-                                    </h2>
-                                    <div className="news-grid">
-                                        {trendingNews.map((item, index) => (
-                                            <NewsCard
-                                                key={item.id || `trend-${index}`}
-                                                item={item}
-                                                index={index}
-                                                onNewsClick={handleNewsClick}
-                                            />
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
-
-                            {/* Later Articles Section */}
-                            {laterNews.length > 0 && (
-                                <section className="news-section-group animate-fadeIn">
-                                    <h2 className="section-title-tag">
-                                        <FiClock />
-                                        Later Articles
-                                    </h2>
-                                    <div className="news-grid">
-                                        {laterNews.map((item, index) => (
-                                            <NewsCard
-                                                key={item.id || `later-${index}`}
-                                                item={item}
-                                                index={index + trendingNews.length}
-                                                onNewsClick={handleNewsClick}
-                                            />
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
-
-                            {filteredNews.length === 0 && (
-                                <div className="empty-state-large glass-effect">
-                                    <FiSearch className="empty-icon" />
-                                    <h3>No news found</h3>
-                                    <p>Try adjusting your filters or search query</p>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </main>
-            </div>
+                        )}
+                    </div>
+                </div>
+            </main>
 
             {/* News Detail Overlay */}
-            {
-                selectedNews && (
-                    <div className="news-detail-overlay animate-fadeIn">
-                        <div className="container">
-                            <div className="news-detail-container glass-effect animate-slideUp">
-                                <button
-                                    className="btn-close-detail"
-                                    onClick={() => setSelectedNews(null)}
-                                >
-                                    <FiX />
-                                </button>
+            {selectedNews && (
+                <div className="news-detail-overlay animate-fadeIn" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.9)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                    <div className="news-detail-container glass-effect" style={{ background: 'white', width: '100%', maxWidth: '1000px', maxHeight: '90vh', borderRadius: '24px', overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                        <button className="close-detail" onClick={() => setSelectedNews(null)} style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10, width: '40px', height: '40px', borderRadius: '50%', background: 'white', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                            <FiX size={20} />
+                        </button>
 
-                                {/* Official Branding Header */}
-                                <div className="detail-brand-header">
-                                    <div className="detail-logo-box">
-                                        <img
-                                            key={`logo-${selectedNews.id}`}
-                                            src={selectedNews.officialLogo}
-                                            alt={`${selectedNews.company} logo`}
-                                            className="detail-logo-img"
-                                            onError={(e) => {
-                                                e.target.onerror = null;
-                                                e.target.src = "https://images.unsplash.com/photo-1614850523060-8da1d56ae167?q=80&w=800&auto=format&fit=crop";
-                                            }}
-                                        />
-                                    </div>
-                                    <div className="verified-badge">
-                                        <div className="pulse-dot"></div>
-                                        <span>Verified Intelligence Source</span>
-                                    </div>
-                                </div>
-
-                                {/* Company Brand Wordmark Banner */}
-                                {selectedNews.image && (
-                                    <div
-                                        className="detail-cover-box animate-fadeIn"
-                                        style={{ background: selectedNews.wordmarkBg || '#0f172a' }}
-                                    >
-                                        <img
-                                            key={`cover-${selectedNews.id}`}
-                                            src={selectedNews.image}
-                                            alt={`${selectedNews.company} wordmark`}
-                                            className="detail-cover-img wordmark-img"
-                                            onError={(e) => {
-                                                e.target.onerror = null;
-                                                e.target.style.display = 'none';
-                                                e.target.parentElement.style.display = 'none';
-                                            }}
-                                        />
-                                    </div>
-                                )}
-
-                                <div className="detail-header">
-                                    {selectedNews.company && (
-                                        <span className="company-badge">{selectedNews.company}</span>
-                                    )}
-                                    <h2 className="detail-title news-heading">{selectedNews.title}</h2>
-                                    <div className="date-badge">
-                                        <FiClock />
-                                        {formatDateSafe(selectedNews.announcedDate, 'MMMM dd, yyyy')}
-                                    </div>
-                                </div>
-
-
-                                <div className="detail-content">
-                                    {selectedNews.content ? (
-                                        selectedNews.content.split('\n\n').map((para, i) => (
-                                            <p key={i}>{para}</p>
-                                        ))
-                                    ) : (
-                                        <p>{selectedNews.description}</p>
-                                    )}
-                                </div>
-
-                                {selectedNews.triggers && selectedNews.triggers.length > 0 && (
-                                    <div className="detail-signals">
-                                        <h3 className="signals-label">Market Triggers:</h3>
-                                        <div className="signals-grid">
-                                            {selectedNews.triggers.map((trigger, idx) => (
-                                                <div key={idx} className="signal-item" title={trigger}>
-                                                    <FiTrendingUp />
-                                                    {getTriggerName(trigger)}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="detail-footer">
-                                    <a
-                                        href={selectedNews.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="btn-primary-news"
-                                    >
-                                        Visit Original Source
-                                        <FiExternalLink />
-                                    </a>
-                                </div>
+                        <div style={{ padding: '40px', overflowY: 'auto' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+                                <img src={selectedNews.officialLogo} alt="" style={{ height: '40px' }} />
+                                <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--accent-color)', textTransform: 'uppercase' }}>{selectedNews.company}</div>
                             </div>
+
+                            <h2 style={{ fontSize: '32px', fontWeight: '900', color: '#0f172a', marginBottom: '24px', lineHeight: '1.2' }}>{selectedNews.title}</h2>
+
+                            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '32px' }}>
+                                {selectedNews.triggers.map(t => (
+                                    <span key={t} style={{ padding: '6px 12px', background: '#f1f5f9', borderRadius: '6px', fontSize: '12px', fontWeight: '700' }}>{t}</span>
+                                ))}
+                            </div>
+
+                            <img src={selectedNews.image} alt="" style={{ width: '100%', borderRadius: '16px', marginBottom: '32px' }} />
+
+                            <div style={{ fontSize: '18px', lineHeight: '1.8', color: '#334155', whiteSpace: 'pre-line' }}>{selectedNews.content}</div>
+
+                            <a href={selectedNews.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '40px', padding: '12px 24px', background: 'var(--primary-color)', color: 'white', borderRadius: '10px', textDecoration: 'none', fontWeight: '700' }}>
+                                View Full Intelligence Report <FiExternalLink />
+                            </a>
                         </div>
                     </div>
-                )
-            }
-        </div >
+                </div>
+            )}
+        </div>
     );
 };
 
