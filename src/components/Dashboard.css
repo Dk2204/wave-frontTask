@@ -826,6 +826,8 @@
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 24px;
     padding-bottom: 60px;
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
 /* Card Geometry Optimization */
@@ -836,7 +838,7 @@
     flex-direction: column;
     overflow: hidden;
     height: 100%;
-    /* Ensure uniform height in grid */
+    border-radius: 12px;
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
@@ -847,6 +849,18 @@
     height: 180px;
     background: #f8f9fa;
     overflow: hidden;
+}
+
+.news-card-media::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.05), transparent);
+    z-index: 1;
+    pointer-events: none;
 }
 
 .news-card-img {
