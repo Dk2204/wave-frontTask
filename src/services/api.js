@@ -99,14 +99,62 @@ const augmentNewsItem = (item) => {
     return `https://logo.clearbit.com/${LOGO_POOL[logoIdx]}`;
   };
 
-  // Assign deterministic Image
-  const getPersistentImage = (hv) => {
-    const imgIdx = hv % IMAGE_POOL.length;
-    return `https://images.unsplash.com/${IMAGE_POOL[imgIdx]}?auto=format&fit=crop&q=80&w=1600`;
+  // 3. Keyword-Based Contextual Image System
+  // Maps specific title keywords to curated sub-pools for better relevance.
+  const TOPIC_IMAGE_MAP = {
+    finance: [
+      'photo-1611974717424-362249df5ee1', 'photo-1590283603385-17ffb3a7f29f', 'photo-1551288049-bebda4e38f71', 'photo-1460925895917-afdab827c52f',
+      'photo-1563986768609-322da13575f3', 'photo-1534951009808-df43444ac2f1', 'photo-1642543348745-03b1219733d9', 'photo-1612178537253-bccd437b730e'
+    ],
+    tech: [
+      'photo-1677442136019-21780ecad995', 'photo-1518770660439-4636190af475', 'photo-1523961131990-5ea7c61b2107', 'photo-1485827404703-89b55fcc595e',
+      'photo-1531297484001-80022131f5a1', 'photo-1550751827-4bd374c3f58b', 'photo-1519389950473-acc7a96834b1', 'photo-1620712943543-bcc4638d9f89'
+    ],
+    growth: [
+      'photo-1486406146926-c627a92ad1ab', 'photo-1449156001141-cd51dfa9f60c', 'photo-1574162071085-38c208154673', 'photo-1522071823991-b5ae72647aa9',
+      'photo-1504384308090-c894fdcc538d', 'photo-1497215728101-856f4ea42174', 'photo-1542744173-8e7e53415bb0', 'photo-1552664730-d307ca884978'
+    ],
+    esg: [
+      'photo-1589829545856-d10d557cf95f', 'photo-1505664194779-8beaceb93744', 'photo-1473341304170-971dccb5ac1e', 'photo-1497435334941-8c899ee9e8e2',
+      'photo-1532601224476-15c79f2f7a51', 'photo-1463947628408-f8581a2f4acc', 'photo-1454165833221-d7d1769123c1', 'photo-1504868584819-f8e905b6c70a'
+    ],
+    medical: [
+      'photo-1576091160399-112ba8d25d1d', 'photo-1532938911079-1b06ac7ceec7', 'photo-1505751172876-fa1923c5c528', 'photo-1584308666744-24d5c474f2ae',
+      'photo-1581091226825-a6a2a5aee158', 'photo-1579684385127-1ef15d508118', 'photo-1583912267670-652319c5c7d8'
+    ]
+  };
+
+  // Keywords to detect topic
+  const KEYWORDS = {
+    finance: ['stock', 'market', 'price', 'invest', 'fund', 'bank', 'capital', 'trade', 'economy', 'crypto', 'revenue', 'profit'],
+    tech: ['ai', 'tech', 'cyber', 'data', 'cloud', 'software', 'app', 'digital', 'robot', 'chip', 'compute', 'platform'],
+    growth: ['launch', 'expand', 'growth', 'partner', 'merge', 'acquire', 'deal', 'strategy', 'develop', 'new'],
+    esg: ['climate', 'energy', 'green', 'carbon', 'sustain', 'environment', 'waste', 'solar', 'wind', 'legal'],
+    medical: ['health', 'drug', 'pharma', 'bio', 'cancer', 'vaccine', 'medical', 'clinical', 'doctor']
+  };
+
+  const getContextualImage = (title, hv) => {
+    const lowerTitle = (title || '').toLowerCase();
+    let selectedPool = IMAGE_POOL; // Default to master pool
+
+    // Detect Category
+    for (const [category, words] of Object.entries(KEYWORDS)) {
+      if (words.some(word => lowerTitle.includes(word))) {
+        if (TOPIC_IMAGE_MAP[category]) {
+          selectedPool = TOPIC_IMAGE_MAP[category];
+          break;
+        }
+      }
+    }
+
+    // Select deterministic image from the specific pool
+    // We add the pool length to the hash mix to ensure distinct selects across pools
+    const imgIdx = (hv + selectedPool.length) % selectedPool.length;
+    return `https://images.unsplash.com/${selectedPool[imgIdx]}?auto=format&fit=crop&q=80&w=1600`;
   };
 
   const officialLogo = getPersistentLogo(positiveHash, domain);
-  const contextualImage = getPersistentImage(positiveHash);
+  const contextualImage = getContextualImage(item.title, positiveHash);
 
   return {
     ...item,
