@@ -134,28 +134,31 @@ const augmentNewsItem = (item) => {
     medical: ['health', 'drug', 'pharma', 'bio', 'cancer', 'vaccine', 'medical', 'clinical', 'doctor']
   };
 
-  const getContextualImage = (title, hv) => {
-    const lowerTitle = (title || '').toLowerCase();
-    let selectedPool = IMAGE_POOL; // Default to master pool
+  // 3. Dynamic Social-Media Style Image Search
+  // Instead of a static pool, we now fetch a unique, relevant image based on the headline.
+  // This simulates "social media" sourcing by finding the most relevant visual match.
+  const getContextualImage = (title, hv, itemId) => {
+    // 1. Extract meaningful keywords from the headline
+    const stopWords = ['a', 'an', 'the', 'in', 'on', 'at', 'for', 'to', 'of', 'and', 'is', 'are', 'with', 'by', 'from', 'up', 'down', 'out', 'over', 'under', 'again', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now'];
+    const keywords = (title || '')
+      .toLowerCase()
+      .replace(/[^\w\s]/g, '') // Remove punctuation
+      .split(/\s+/)
+      .filter(word => !stopWords.includes(word) && word.length > 3) // Filter stop words and short words
+      .slice(0, 3) // Take top 3 keywords for a focused search
+      .join(',');
 
-    // Detect Category
-    for (const [category, words] of Object.entries(KEYWORDS)) {
-      if (words.some(word => lowerTitle.includes(word))) {
-        if (TOPIC_IMAGE_MAP[category]) {
-          selectedPool = TOPIC_IMAGE_MAP[category];
-          break;
-        }
-      }
-    }
+    // 2. Use Unsplash Source API with specific keywords
+    // We append the unique item ID as a cache-buster/seed to ensure stability
+    // If keywords fail (empty), fallback to 'business,news'
+    const searchQuery = keywords || 'business,technology,news';
 
-    // Select deterministic image from the specific pool
-    // We add the pool length to the hash mix to ensure distinct selects across pools
-    const imgIdx = (hv + selectedPool.length) % selectedPool.length;
-    return `https://images.unsplash.com/${selectedPool[imgIdx]}?auto=format&fit=crop&q=80&w=1600`;
+    // Using a deterministic random seed based on the hash to ensure the SAME image loads for the SAME article every time
+    return `https://source.unsplash.com/1600x900/?${searchQuery}&sig=${hv}`;
   };
 
   const officialLogo = getPersistentLogo(positiveHash, domain);
-  const contextualImage = getContextualImage(item.title, positiveHash);
+  const contextualImage = getContextualImage(item.title, positiveHash, item.id);
 
   return {
     ...item,
