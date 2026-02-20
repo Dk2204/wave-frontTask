@@ -52,84 +52,84 @@ const augmentNewsItem = (item) => {
   // 2. Company Brand Wordmark Map
   // Each domain maps to the company's official WORDMARK (text-based brand name logo)
   // sourced from Wikipedia Wikimedia Commons & official brand press kits.
-  // brandBg = the correct background color the wordmark is designed to appear on.
+  // brandBg is now set to #ffffff (White) for a clean, consistent dashboard look.
   const COMPANY_WORDMARK_MAP = {
     'microsoft.com': {
       url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Microsoft_logo_%282012%29.svg/2560px-Microsoft_logo_%282012%29.svg.png',
       brandBg: '#ffffff'
     },
     'tesla.com': {
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Tesla_Motors.svg/2560px-Tesla_Motors.svg.png',
-      brandBg: '#cc0000'
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Tesla_wordmark.svg/2560px-Tesla_wordmark.svg.png',
+      brandBg: '#ffffff'
     },
     'openai.com': {
       url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/OpenAI_Logo.svg/2560px-OpenAI_Logo.svg.png',
-      brandBg: '#000000'
+      brandBg: '#ffffff'
     },
     'meta.com': {
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Meta_Platforms_Inc._logo.svg/2560px-Meta_Platforms_Inc._logo.svg.png',
-      brandBg: '#0082fb'
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Meta-Logo_Black.png/1200px-Meta-Logo_Black.png',
+      brandBg: '#ffffff'
     },
     'salesforce.com': {
       url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Salesforce.com_logo.svg/2560px-Salesforce.com_logo.svg.png',
-      brandBg: '#00a1e0'
+      brandBg: '#ffffff'
     },
     'netflix.com': {
       url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Netflix_2015_logo.svg/2560px-Netflix_2015_logo.svg.png',
-      brandBg: '#141414'
+      brandBg: '#ffffff'
     },
     'hdfc.com': {
       url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/HDFC_Bank_Logo.svg/2560px-HDFC_Bank_Logo.svg.png',
-      brandBg: '#004c8f'
+      brandBg: '#ffffff'
     },
     'hdfc.bank.in': {
       url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/HDFC_Bank_Logo.svg/2560px-HDFC_Bank_Logo.svg.png',
-      brandBg: '#004c8f'
+      brandBg: '#ffffff'
     },
     'federal.bank.in': {
-      url: 'https://upload.wikimedia.org/wikipedia/en/thumb/4/48/The_Federal_Bank_Limited_logo.svg/1280px-The_Federal_Bank_Limited_logo.svg.png',
-      brandBg: '#002f6c'
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Federal_Bank_Logo.svg/1280px-Federal_Bank_Logo.svg.png',
+      brandBg: '#ffffff'
     },
     'x.ai': {
       url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/XAI_brand_logo.svg/1280px-XAI_brand_logo.svg.png',
-      brandBg: '#000000'
+      brandBg: '#ffffff'
     },
     'wingify.com': {
       url: 'https://vwo.com/img/vwo-logo.svg',
-      brandBg: '#f5a623'
+      brandBg: '#ffffff'
     },
     'anaplan.com': {
       url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Anaplan_logo.svg/1280px-Anaplan_logo.svg.png',
-      brandBg: '#0a2240'
+      brandBg: '#ffffff'
     },
     'clay.com': {
       url: 'https://clay.com/clay-logo.svg',
-      brandBg: '#1a1a2e'
+      brandBg: '#ffffff'
     },
     'apollo.io': {
       url: 'https://apollo.io/images/apollo-logo.svg',
-      brandBg: '#1c1e35'
+      brandBg: '#ffffff'
     },
     'manutd.com': {
-      url: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/7a/Manchester_United_FC_crest.svg/1024px-Manchester_United_FC_crest.svg.png',
-      brandBg: '#da020e'
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Manchester_United_wordmark.svg/1280px-Manchester_United_wordmark.svg.png',
+      brandBg: '#ffffff'
     }
   };
 
-  // Fallback wordmarks for companies not yet in the specific map
+  // Fallback wordmarks for companies not yet in the map
   const FALLBACK_WORDMARKS = [
     { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/2560px-Google_2015_logo.svg.png', brandBg: '#ffffff' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/2560px-Amazon_logo.svg.png', brandBg: '#131921' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/1024px-Apple_logo_black.svg.png', brandBg: '#000000' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/IBM_logo.svg/2560px-IBM_logo.svg.png', brandBg: '#1f70c1' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png', brandBg: '#1a1f71' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/2560px-MasterCard_Logo.svg.png', brandBg: '#f79e1b' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Slack_new_logo_and_icon.svg/2560px-Slack_new_logo_and_icon.svg.png', brandBg: '#4a154b' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2560px-Spotify_logo_without_text.svg.png', brandBg: '#1db954' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/LinkedIn_logo_initials.png/600px-LinkedIn_logo_initials.png', brandBg: '#0077b5' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/2048px-Octicons-mark-github.svg.png', brandBg: '#24292e' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/HubSpot_Logo.svg/2560px-HubSpot_Logo.svg.png', brandBg: '#ff7a59' },
-    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Shopify_logo_2018.svg/2560px-Shopify_logo_2018.svg.png', brandBg: '#96bf48' }
+    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/2560px-Amazon_logo.svg.png', brandBg: '#ffffff' },
+    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Apple_logo_black.svg/1024px-Apple_logo_black.svg.png', brandBg: '#ffffff' },
+    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/IBM_logo.svg/2560px-IBM_logo.svg.png', brandBg: '#ffffff' },
+    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png', brandBg: '#ffffff' },
+    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/2560px-MasterCard_Logo.svg.png', brandBg: '#ffffff' },
+    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Slack_new_logo_and_icon.svg/2560px-Slack_new_logo_and_icon.svg.png', brandBg: '#ffffff' },
+    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/2560px-Spotify_logo_without_text.svg.png', brandBg: '#ffffff' },
+    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/LinkedIn_logo_initials.png/600px-LinkedIn_logo_initials.png', brandBg: '#ffffff' },
+    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/2048px-Octicons-mark-github.svg.png', brandBg: '#ffffff' },
+    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/HubSpot_Logo.svg/2560px-HubSpot_Logo.svg.png', brandBg: '#ffffff' },
+    { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Shopify_logo_2018.svg/2560px-Shopify_logo_2018.svg.png', brandBg: '#ffffff' }
   ];
 
   // Stable Hash logic — tied to article content, zero randomness
