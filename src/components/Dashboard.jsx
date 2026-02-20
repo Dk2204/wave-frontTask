@@ -40,14 +40,14 @@ const NewsCard = ({ item, index, onNewsClick }) => (
         style={{ animationDelay: `${index * 0.05}s` }}
         onClick={(e) => onNewsClick(e, item)}
     >
-        <div className="news-card-media">
+        <div className="news-card-media" style={{ background: item.wordmarkBg || '#0f172a' }}>
             <img
                 src={item.image}
                 alt={item.title}
                 className="news-card-img"
                 onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = "https://images.unsplash.com/photo-1614850523060-8da1d56ae167?q=80&w=800&auto=format&fit=crop";
+                    e.target.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Microsoft_logo_%282012%29.svg/1024px-Microsoft_logo_%282012%29.svg.png';
                 }}
             />
             <div className="news-card-logo-overlay">
@@ -666,14 +666,17 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
                                     </div>
                                 </div>
 
-                                {/* Story Cover Image - Positioned below logo as requested */}
+                                {/* Company Brand Wordmark Banner */}
                                 {selectedNews.image && (
-                                    <div className="detail-cover-box animate-fadeIn">
+                                    <div
+                                        className="detail-cover-box animate-fadeIn"
+                                        style={{ background: selectedNews.wordmarkBg || '#0f172a' }}
+                                    >
                                         <img
                                             key={`cover-${selectedNews.id}`}
                                             src={selectedNews.image}
-                                            alt={selectedNews.title}
-                                            className="detail-cover-img"
+                                            alt={`${selectedNews.company} wordmark`}
+                                            className="detail-cover-img wordmark-img"
                                             onError={(e) => {
                                                 e.target.onerror = null;
                                                 e.target.style.display = 'none';
