@@ -182,7 +182,7 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
 
     const fetchSubscriptions = async () => {
         try {
-            const data = await subscriptionsAPI.getSubscriptions();
+            const data = await subscriptionsAPI.getUserSubscriptions();
             setSubscriptions(data);
         } catch (error) {
             console.error('Failed to fetch subscriptions:', error);

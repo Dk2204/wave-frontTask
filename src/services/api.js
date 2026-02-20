@@ -175,6 +175,9 @@ export const authAPI = {
     } catch {
       return null;
     }
+  },
+  isAuthenticated: () => {
+    return !!sessionStorage.getItem('authToken');
   }
 };
 
