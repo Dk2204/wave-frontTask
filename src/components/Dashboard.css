@@ -1078,11 +1078,12 @@
 /* ── Branding Header ─────────────────────────────────────────── */
 .detail-brand-header {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    margin: 0 0 24px;
+    margin: 0 0 32px;
     padding-bottom: 24px;
     border-bottom: 1px solid #eee;
+    gap: 20px;
 }
 
 .detail-logo-box {
@@ -1426,8 +1427,25 @@
     }
 
     .detail-brand-header {
-        margin-bottom: 16px;
+        margin-bottom: 24px;
         padding-bottom: 16px;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        /* Padding to avoid close button overlap on small screens */
+        padding-right: 40px;
+    }
+
+    .detail-logo-box {
+        width: 120px;
+        height: 60px;
+        padding: 5px 10px;
+    }
+
+    .verified-badge {
+        font-size: 10px;
+        padding: 5px 12px;
+        gap: 6px;
     }
 
     .detail-cover-box {
