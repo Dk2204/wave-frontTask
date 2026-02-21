@@ -13,11 +13,12 @@ import {
     FiClock,
     FiArrowRight,
     FiUser,
-    FiZap
+    FiZap,
+    FiCheck
 } from 'react-icons/fi';
 import { format, parseISO, isValid } from 'date-fns';
 import { authAPI, subscriptionsAPI, newsAPI } from '../services/api';
-import { getTriggerName, TRIGGER_CATEGORY_MAPPING } from '../services/triggerMapping';
+import { getTriggerName, MAPPED_CHANNELS, TRIGGER_CATEGORY_MAPPING } from '../services/triggerMapping';
 import './Dashboard.css';
 
 const formatDateSafe = (dateObj, formatStr) => {
@@ -38,6 +39,7 @@ const NewsCard = ({ item, index, onNewsClick }) => (
     >
         <div className="news-card-media">
             <img src={item.image} alt={item.title} className="news-card-img" loading="lazy" />
+            <div className="news-card-overlay"></div>
             <div className="news-card-logo-overlay">
                 <img src={item.officialLogo} alt={item.company} className="news-card-logo" />
             </div>
@@ -45,6 +47,20 @@ const NewsCard = ({ item, index, onNewsClick }) => (
         <div className="news-card-body">
             <div className="company-badge">{item.company}</div>
             <h3 className="news-title">{item.title}</h3>
+            <div className="card-triggers">
+                {Array.from(new Set((item.triggers || []).map(t =>
+                    TRIGGER_CATEGORY_MAPPING[t]?.category?.replace(/^[^\s]+\s/, '') || getTriggerName(t)
+                ))).slice(0, 2).map(categoryHeader => (
+                    <span key={categoryHeader} className="card-trigger-tag">
+                        <FiTag /> {categoryHeader}
+                    </span>
+                ))}
+                {new Set((item.triggers || []).map(t => TRIGGER_CATEGORY_MAPPING[t]?.category)).size > 2 &&
+                    <span className="card-trigger-more">
+                        +{new Set((item.triggers || []).map(t => TRIGGER_CATEGORY_MAPPING[t]?.category)).size - 2}
+                    </span>
+                }
+            </div>
             <p className="news-description">{item.description}</p>
             <div className="news-card-footer">
                 <span className="date-badge">
@@ -63,11 +79,27 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
     const [signalSource, setSignalSource] = useState('connecting');
     const [lastSync, setLastSync] = useState(null);
     const [selectedNews, setSelectedNews] = useState(null);
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-    const fetchNews = async () => {
+    const [filters, setFilters] = useState(() => {
+        const saved = localStorage.getItem('intellizence_filters');
+        return saved ? JSON.parse(saved) : {
+            companyDomain: '',
+            triggers: [],
+            startDate: '',
+            endDate: ''
+        };
+    });
+    const [availableFilters, setAvailableFilters] = useState({
+        companies: [],
+        triggers: []
+    });
+
+    const fetchNews = async (filterOverride = null) => {
         setLoading(true);
         try {
-            const data = await newsAPI.getCompanyNews();
+            const activeFilters = filterOverride || filters;
+            const data = await newsAPI.getCompanyNews(activeFilters);
             const newsItems = data?.news || [];
 
             const sortedNews = Array.isArray(newsItems)
@@ -85,8 +117,59 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
         }
     };
 
+    const fetchSubscriptions = async () => {
+        try {
+            const subData = await subscriptionsAPI.getSubscriptions();
+            // Data structure: subData.config.companies / subData.config.triggers
+            const config = subData.config || {};
+
+            const triggerCategories = [
+                "Mergers & Acquisitions",
+                "Leadership/Management Changes",
+                "Fundraising & Investment",
+                "Initial Public Offering (IPO)",
+                "Business Expansion",
+                "Financial Results & Outlook",
+                "Product & Service Launch",
+                "Innovation & Initiatives",
+                "Partnerships & Joint Ventures",
+                "Layoffs & Cost-Cutting",
+                "Bankruptcy & Business Shut-down",
+                "Awards & Recognition",
+                "Advertising & Marketing",
+                "Customer Acquisition / Sourcing",
+                "Customer Churn",
+                "Pricing",
+                "Legal",
+                "Regulatory",
+                "Research & Publications",
+                "Scandals, Rumours, Activism",
+                "Security Breaches & Outages",
+                "Employee/Labor Dispute",
+                "Accidents & Disasters",
+                "Recalls & Disruptions"
+            ];
+
+            setAvailableFilters({
+                companies: (config.companies || []).map(domain => ({
+                    domain,
+                    name: MAPPED_CHANNELS[domain] || domain.split('.')[0].toUpperCase()
+                })),
+                triggers: triggerCategories.map(category => ({
+                    code: category,
+                    name: category
+                }))
+            });
+        } catch (error) {
+            console.error('Failed to load filter metadata:', error);
+        }
+    };
+
     useEffect(() => {
-        fetchNews();
+        const saved = localStorage.getItem('intellizence_filters');
+        const initialFilters = saved ? JSON.parse(saved) : filters;
+        fetchNews(initialFilters);
+        fetchSubscriptions();
     }, []);
 
     // Handle Deep Linking if a news item was clicked while logged out
@@ -104,6 +187,47 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
             return;
         }
         setSelectedNews(item);
+    };
+
+    const toggleTrigger = (categoryName) => {
+        setFilters(prev => ({
+            ...prev,
+            triggers: prev.triggers.includes(categoryName)
+                ? prev.triggers.filter(t => t !== categoryName)
+                : [...prev.triggers, categoryName]
+        }));
+    };
+
+    const handleSyncRefresh = () => {
+        const resetState = {
+            companyDomain: '',
+            triggers: [],
+            startDate: '',
+            endDate: ''
+        };
+        setFilters(resetState);
+        setSearchQuery('');
+        localStorage.removeItem('intellizence_filters');
+        fetchNews(resetState);
+    };
+
+    const handleApplyIntelligence = () => {
+        localStorage.setItem('intellizence_filters', JSON.stringify(filters));
+        setIsFilterOpen(false);
+        fetchNews(filters);
+    };
+
+    const clearFilters = () => {
+        const resetState = {
+            companyDomain: '',
+            triggers: [],
+            startDate: '',
+            endDate: ''
+        };
+        setFilters(resetState);
+        setSearchQuery('');
+        localStorage.removeItem('intellizence_filters');
+        fetchNews(resetState);
     };
 
     const filteredNews = useMemo(() => {
@@ -129,13 +253,21 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
                 </div>
 
                 <div className="header-right">
+                    <div className="header-sync-group">
+                        <div className="premium-badge">
+                            <FiZap /> <span>UNIVERSAL ACCESS</span>
+                        </div>
+                        <div className="sync-timestamp">
+                            LAST SYNC: {lastSync ? format(lastSync, 'HH:mm:ss') : '--:--:--:--'}
+                        </div>
+                    </div>
                     <div className={`live-status-badge ${signalSource}`}>
                         <div className={`status-dot ${signalSource === 'live' ? 'pulse' : ''}`}
                             style={{ backgroundColor: signalSource === 'live' ? '#4ade80' : signalSource === 'fallback' ? '#f59e0b' : '#ef4444' }}
                         />
                         <span>{signalSource === 'live' ? 'LIVE FEED' : signalSource === 'fallback' ? 'OFFLINE BUFFER' : 'SIGNAL ERROR'}</span>
                     </div>
-                    <button className="sync-btn" onClick={fetchNews} disabled={loading} title="Sync Live News">
+                    <button className="sync-btn" onClick={handleSyncRefresh} disabled={loading} title="Sync Live News">
                         <FiRefreshCw className={loading ? 'spin' : ''} />
                     </button>
                     {isAuthenticated ? (
@@ -154,36 +286,37 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
                 <div className="news-content">
                     <div className="container">
                         <div className="welcome-banner animate-fadeIn">
-                            <div className="welcome-text">
-                                <h1>Intelligence Dashboard</h1>
-                                <p>Real-time corporate signals and strategic disruptions across your tracked portfolio.</p>
-                            </div>
-                            <div className="welcome-badge-group">
-                                <div className="premium-badge">
-                                    <FiZap /> <span>UNIVERSAL ACCESS</span>
-                                </div>
-                                <div style={{ fontSize: '11px', fontWeight: '800', opacity: '0.8', textAlign: 'right' }}>
-                                    LAST SYNC: {lastSync ? format(lastSync, 'HH:mm:ss') : '--:--:--'}
+                            <div className="welcome-content">
+                                <div className="welcome-text">
+                                    <h1>Intelligence Dashboard</h1>
+                                    <p>Real-time corporate signals and strategic disruptions across your tracked portfolio.</p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="news-toolbar">
-                            <div className="search-box">
-                                <FiSearch className="search-icon" />
-                                <input
-                                    type="text"
-                                    className="search-input-field"
-                                    placeholder="Scan intelligence reports..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                                {searchQuery && (
-                                    <button className="clear-btn" onClick={() => setSearchQuery('')} style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', cursor: 'pointer' }}>
-                                        <FiX />
-                                    </button>
-                                )}
+                            <div className="toolbar-main">
+                                <div className="search-box">
+                                    <FiSearch className="search-icon" />
+                                    <input
+                                        type="text"
+                                        className="search-input-field"
+                                        placeholder="Scan intelligence reports..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                    {searchQuery && (
+                                        <button className="clear-btn" onClick={() => setSearchQuery('')}>
+                                            <FiX />
+                                        </button>
+                                    )}
+                                </div>
+                                <button className={`filter-toggle-btn ${isFilterOpen ? 'active' : ''}`} onClick={() => setIsFilterOpen(!isFilterOpen)}>
+                                    <FiFilter /> <span>Filters</span>
+                                    {(filters.companyDomain || filters.triggers.length > 0 || filters.startDate) && <span className="filter-count-dot" />}
+                                </button>
                             </div>
+
                             <div className="stats-bar-minimal">
                                 <div className="stat-item-small">
                                     <span className="stat-label-tiny">TOTAL REPORTS</span>
@@ -192,10 +325,69 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
                             </div>
                         </div>
 
+                        {/* FILTER PANEL */}
+                        {isFilterOpen && (
+                            <div className="filter-panel glass-effect animate-fadeIn">
+                                <div className="filter-section">
+                                    <label className="filter-label"><FiUser /> Company Focus</label>
+                                    <select
+                                        className="filter-select"
+                                        value={filters.companyDomain}
+                                        onChange={(e) => setFilters(prev => ({ ...prev, companyDomain: e.target.value }))}
+                                    >
+                                        <option value="">All Tracked Companies</option>
+                                        {availableFilters.companies.map(c => (
+                                            <option key={c.domain} value={c.domain}>{c.name} ({c.domain})</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="filter-section">
+                                    <label className="filter-label"><FiCalendar /> Date Range</label>
+                                    <div className="date-inputs">
+                                        <input
+                                            type="date"
+                                            className="date-input"
+                                            value={filters.startDate}
+                                            onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                                        />
+                                        <span className="date-separator">to</span>
+                                        <input
+                                            type="date"
+                                            className="date-input"
+                                            value={filters.endDate}
+                                            onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="filter-section full-width">
+                                    <label className="filter-label"><FiTag /> Signal Intelligence Triggers</label>
+                                    <div className="trigger-chips">
+                                        {availableFilters.triggers.map(t => (
+                                            <button
+                                                key={t.code}
+                                                className={`trigger-chip ${filters.triggers.includes(t.code) ? 'active' : ''}`}
+                                                onClick={() => toggleTrigger(t.code)}
+                                            >
+                                                {filters.triggers.includes(t.code) ? <FiCheck /> : <FiTag />}
+                                                {t.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="filter-footer">
+                                    <button className="btn-clear-all" onClick={clearFilters}>Reset Filters</button>
+                                    <button className="btn-apply" onClick={handleApplyIntelligence}>Apply Intelligence</button>
+                                </div>
+                            </div>
+                        )}
+
                         {loading && news.length === 0 ? (
-                            <div className="loading-state" style={{ textAlign: 'center', padding: '100px 0' }}>
-                                <FiRefreshCw className="spin" size={48} style={{ color: 'var(--accent-color)', marginBottom: '16px' }} />
-                                <p style={{ fontWeight: '700', color: 'var(--text-muted)' }}>Synchronizing with Intelligence Feed...</p>
+                            <div className="loading-state">
+                                <FiRefreshCw className="spin" size={48} />
+                                <p>Synchronizing with Intelligence Feed...</p>
                             </div>
                         ) : (
                             <div className="news-grid">
@@ -206,10 +398,11 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
                         )}
 
                         {!loading && filteredNews.length === 0 && (
-                            <div className="empty-state-large" style={{ textAlign: 'center', padding: '100px 0', background: 'white', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-                                <FiSearch size={48} style={{ color: 'var(--border-color)', marginBottom: '16px' }} />
-                                <h3 style={{ fontWeight: '800', marginBottom: '8px' }}>No matching intelligence found</h3>
-                                <p style={{ color: 'var(--text-muted)' }}>Try adjusting your search query or reset filters.</p>
+                            <div className="empty-state-large">
+                                <FiSearch size={48} />
+                                <h3>No matching intelligence found</h3>
+                                <p>Try adjusting your search query or reset filters.</p>
+                                <button className="btn-reset-large" onClick={clearFilters}>Reset All Filters</button>
                             </div>
                         )}
                     </div>
@@ -218,33 +411,39 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
 
             {/* News Detail Overlay */}
             {selectedNews && (
-                <div className="news-detail-overlay animate-fadeIn" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.9)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                    <div className="news-detail-container glass-effect" style={{ background: 'white', width: '100%', maxWidth: '1000px', maxHeight: '90vh', borderRadius: '24px', overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-                        <button className="close-detail" onClick={() => setSelectedNews(null)} style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10, width: '40px', height: '40px', borderRadius: '50%', background: 'white', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <div className="news-detail-overlay animate-fadeIn" onClick={() => setSelectedNews(null)}>
+                    <div className="news-detail-container glass-effect" onClick={(e) => e.stopPropagation()}>
+                        <button className="close-detail" onClick={() => setSelectedNews(null)}>
                             <FiX size={20} />
                         </button>
 
-                        <div style={{ padding: '40px', overflowY: 'auto' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+                        <div className="news-detail-content">
+                            <div className="detail-header">
                                 <img src={selectedNews.officialLogo} alt="" style={{ height: '40px' }} />
-                                <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--accent-color)', textTransform: 'uppercase' }}>{selectedNews.company}</div>
+                                <div className="detail-company-name">{selectedNews.company}</div>
                             </div>
 
-                            <h2 style={{ fontSize: '32px', fontWeight: '900', color: '#0f172a', marginBottom: '24px', lineHeight: '1.2' }}>{selectedNews.title}</h2>
-
-                            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '32px' }}>
-                                {selectedNews.triggers.map(t => (
-                                    <span key={t} style={{ padding: '6px 12px', background: '#f1f5f9', borderRadius: '6px', fontSize: '12px', fontWeight: '700' }}>{t}</span>
+                            <h2 className="detail-title">{selectedNews.title}</h2>
+                            <div className="detail-tags">
+                                {Array.from(new Set((selectedNews.triggers || []).map(t =>
+                                    TRIGGER_CATEGORY_MAPPING[t]?.category?.replace(/^[^\s]+\s/, '') || getTriggerName(t)
+                                ))).map(categoryHeader => (
+                                    <span key={categoryHeader} className="detail-tag">
+                                        <FiTag /> {categoryHeader}
+                                    </span>
                                 ))}
                             </div>
 
-                            <img src={selectedNews.image} alt="" style={{ width: '100%', borderRadius: '16px', marginBottom: '32px' }} />
 
-                            <div style={{ fontSize: '18px', lineHeight: '1.8', color: '#334155', whiteSpace: 'pre-line' }}>{selectedNews.content}</div>
+                            <img src={selectedNews.image} alt="" className="detail-main-img" />
 
-                            <a href={selectedNews.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '40px', padding: '12px 24px', background: 'var(--primary-color)', color: 'white', borderRadius: '10px', textDecoration: 'none', fontWeight: '700' }}>
-                                View Full Intelligence Report <FiExternalLink />
-                            </a>
+                            <div className="detail-body-text">{selectedNews.content}</div>
+
+                            <div className="detail-footer">
+                                <a href={selectedNews.url} target="_blank" rel="noopener noreferrer" className="btn-view-report">
+                                    View Full Intelligence Report <FiExternalLink />
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>

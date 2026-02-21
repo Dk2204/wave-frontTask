@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import Chatbot from './components/Chatbot';
 import { authAPI } from './services/api';
 import { FiX } from 'react-icons/fi';
 import './App.css';
@@ -47,6 +48,10 @@ function App() {
         pendingNewsItem={pendingNewsItem}
         onPendingItemCleared={() => setPendingNewsItem(null)}
       />
+
+      {/* 🤖 Antigravity Intelligence Layer */}
+      <Chatbot />
+
       {showLogin && (
         <div className="login-overlay animate-fadeIn">
           <button className="close-login" onClick={() => {
