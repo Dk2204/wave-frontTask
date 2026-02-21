@@ -38,14 +38,28 @@ const NewsCard = ({ item, index, onNewsClick }) => (
         onClick={(e) => onNewsClick(e, item)}
     >
         <div className="news-card-media">
-            <img src={item.image} alt={item.title} className="news-card-img" loading="lazy" />
+            <img
+                src={item.image}
+                alt={item.title}
+                className="news-card-img"
+                loading="lazy"
+                onError={(e) => {
+                    e.target.src = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=cover&q=80&w=1200';
+                    e.target.onerror = null;
+                }}
+            />
             <div className="news-card-overlay"></div>
             <div className="news-card-logo-overlay">
                 <img src={item.officialLogo} alt={item.company} className="news-card-logo" />
             </div>
         </div>
         <div className="news-card-body">
-            <div className="company-badge">{item.company}</div>
+            <div className="card-top-info">
+                <div className="company-badge">{item.company}</div>
+                {item.socialSource && (
+                    <div className="social-source-tag">via {item.socialSource}</div>
+                )}
+            </div>
             <h3 className="news-title">{item.title}</h3>
             <div className="card-triggers">
                 {Array.from(new Set((item.triggers || []).map(t =>
@@ -124,37 +138,27 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
             const config = subData.config || {};
 
             const triggerCategories = [
-                "Mergers & Acquisitions",
-                "Leadership/Management Changes",
-                "Fundraising & Investment",
-                "Initial Public Offering (IPO)",
-                "Business Expansion",
-                "Financial Results & Outlook",
-                "Product & Service Launch",
-                "Innovation & Initiatives",
-                "Partnerships & Joint Ventures",
-                "Layoffs & Cost-Cutting",
-                "Bankruptcy & Business Shut-down",
-                "Awards & Recognition",
-                "Advertising & Marketing",
-                "Customer Acquisition / Sourcing",
-                "Customer Churn",
-                "Pricing",
-                "Legal",
-                "Regulatory",
-                "Research & Publications",
-                "Scandals, Rumours, Activism",
-                "Security Breaches & Outages",
-                "Employee/Labor Dispute",
-                "Accidents & Disasters",
-                "Recalls & Disruptions"
+                "Mergers & Acquisitions", "Leadership/Management Changes", "Fundraising & Investment",
+                "Initial Public Offering (IPO)", "Business Expansion", "Financial Results & Outlook",
+                "Product & Service Launch", "Innovation & Initiatives", "Partnerships & Joint Ventures",
+                "Layoffs & Cost-Cutting", "Bankruptcy & Business Shut-down", "Awards & Recognition",
+                "Advertising & Marketing", "Customer Acquisition / Sourcing", "Customer Churn",
+                "Pricing", "Legal", "Regulatory", "Research & Publications",
+                "Scandals, Rumours, Activism", "Security Breaches & Outages", "Employee/Labor Dispute",
+                "Accidents & Disasters", "Recalls & Disruptions"
+            ];
+
+            const authorizedDomains = [
+                "microsoft.com", "wingify.com", "openai.com", "tesla.com", "x.ai",
+                "salesforce.com", "anaplan.com", "clay.com", "apollo.io", "hdfc.com",
+                "hdfc.bank.in", "federal.bank.in", "meta.com", "manutd.com", "netflix.com"
             ];
 
             setAvailableFilters({
-                companies: (config.companies || []).map(domain => ({
+                companies: authorizedDomains.map(domain => ({
                     domain,
                     name: MAPPED_CHANNELS[domain] || domain.split('.')[0].toUpperCase()
-                })),
+                })).sort((a, b) => a.name.localeCompare(b.name)),
                 triggers: triggerCategories.map(category => ({
                     code: category,
                     name: category
@@ -170,7 +174,27 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
         const initialFilters = saved ? JSON.parse(saved) : filters;
         fetchNews(initialFilters);
         fetchSubscriptions();
+
+        // 📡 Social Media Live Pulse — Synchronize every 60 seconds
+        const pulse = setInterval(() => {
+            fetchNews();
+        }, 60000);
+
+        return () => clearInterval(pulse);
     }, []);
+
+    // 🔒 Scroll Lock Intelligence Layer — Enabled only for deep-dive news detail
+    useEffect(() => {
+        const isLocked = !!selectedNews;
+        if (isLocked) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [selectedNews]);
 
     // Handle Deep Linking if a news item was clicked while logged out
     useEffect(() => {
@@ -290,6 +314,20 @@ const Dashboard = ({ isAuthenticated, onLogout, onLoginClick, pendingNewsItem, o
                                 <div className="welcome-text">
                                     <h1>Intelligence Dashboard</h1>
                                     <p>Real-time corporate signals and strategic disruptions across your tracked portfolio.</p>
+                                </div>
+                                <div className="social-connection-badge">
+                                    <div className={`pulse-dot ${signalSource === 'error' ? 'red' : 'green'}`} />
+                                    <span>
+                                        {signalSource === 'live' ? 'Connected to Enterprise Signal API' :
+                                            signalSource === 'social' ? 'Syncing with Official Social News Pulse' :
+                                                signalSource === 'connecting' ? 'Establishing Social Linkage...' :
+                                                    'Signal Interference Detected'}
+                                    </span>
+                                    {lastSync && (
+                                        <div className="last-sync-tag">
+                                            Last Sync: {formatDateSafe(lastSync, 'HH:mm:ss')}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

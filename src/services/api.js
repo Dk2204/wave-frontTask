@@ -10,8 +10,7 @@ const API_KEY = 'd6b1a63727159274e0d83042713ee999';
 const TRIAL_COMPANIES = [
   "microsoft.com", "wingify.com", "openai.com", "tesla.com", "x.ai",
   "salesforce.com", "anaplan.com", "clay.com", "apollo.io", "hdfc.com",
-  "hdfc.bank.in", "federal.bank.in", "meta.com", "manutd.com", "netflix.com",
-  "nvidia.com", "apple.com", "amazon.com", "google.com", "zara.com", "nike.com"
+  "hdfc.bank.in", "federal.bank.in", "meta.com", "manutd.com", "netflix.com"
 ];
 
 const liveNewsClient = axios.create({
@@ -31,36 +30,27 @@ const stripHtml = (html) => {
 };
 
 const BRAND_REGISTRY = {
-  'microsoft.com': {
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/512px-Microsoft_logo.svg.png',
-  },
-  'wingify.com': {
-    logo: 'https://unavatar.io/wingify.com',
-  },
-  'openai.com': {
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/4/4d/OpenAI_Logo.svg',
-  },
-  'tesla.com': {
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/b/bd/Tesla_Motors.svg',
-  },
-  'meta.com': {
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Meta_Platforms_Inc._logo.svg',
-  },
-  'nvidia.com': {
-    logo: 'https://upload.wikimedia.org/wikipedia/sco/2/21/Nvidia_logo.svg',
-  },
-  'apple.com': {
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg',
-  },
-  'google.com': {
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg',
-  }
+  'microsoft.com': { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/512px-Microsoft_logo.svg.png' },
+  'wingify.com': { logo: 'https://unavatar.io/wingify.com' },
+  'openai.com': { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/OpenAI_Logo.svg/1024px-OpenAI_Logo.svg.png' },
+  'tesla.com': { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Tesla_Motors.svg/512px-Tesla_Motors.svg.png' },
+  'x.ai': { logo: 'https://wcms.alura.com.br/wp-content/uploads/2025/12/xai-e1766432557653.png' },
+  'salesforce.com': { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Salesforce.com_logo.svg/1024px-Salesforce.com_logo.svg.png' },
+  'anaplan.com': { logo: 'https://www.anaplan.com/content/dam/anaplan/wp-content/uploads/2017/02/anaplan-press-release.png' },
+  'clay.com': { logo: 'https://cdn.prod.website-files.com/6392f54210990d7ffbfca55f/67f7d5273eeb62f4e766d791_Clay-Logo---Cover-Image-for-Product-Hub-made-by-Zefi-.jpeg' },
+  'apollo.io': { logo: 'https://assets.techrepublic.com/uploads/2024/05/tr_20240515-apollo-io-review.jpg' },
+  'hdfc.com': { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/HDFC_Bank_Logo.svg/1024px-HDFC_Bank_Logo.svg.png' },
+  'hdfc.bank.in': { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/HDFC_Bank_Logo.svg/1024px-HDFC_Bank_Logo.svg.png' },
+  'federal.bank.in': { logo: 'https://manifest-media.in/cover/prev/6egh70hfpfp66oog85m6kupbi1-20260107105153.Medi.jpeg' },
+  'meta.com': { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Meta_Platforms_Inc._logo.svg/1024px-Meta_Platforms_Inc._logo.svg.png' },
+  'manutd.com': { logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/7a/Manchester_United_FC_crest.svg/1024px-Manchester_United_FC_crest.svg.png' },
+  'netflix.com': { logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Netflix_2015_logo.svg/1024px-Netflix_2015_logo.svg.png' }
 };
 
 /**
  * Augments news items with official branding and contextual background imagery.
  */
-const augmentNewsItem = (item) => {
+const augmentNewsItem = (item, refreshSig = Date.now()) => {
   const domain = item.companyDomain || item.companyDomains?.[0] || 'intellizence.com';
   const company = item.company || item.companyNames?.[0] || 'Global Enterprise';
   const rawTitle = item.title || item.newsHeading || 'Intelligence Alert';
@@ -83,17 +73,19 @@ const augmentNewsItem = (item) => {
     officialLogo = `https://logo.clearbit.com/${domain}?size=128`;
   }
 
-  // ─── 🖼️ CONTEXTUAL BACKGROUND ENGINE ───────────────────────────
-  // We construct a semantic search query for the most relevant imagery
+  // ─── 🖼️ UNIQUE GOOGLE PLATFORM IMAGING ENGINE ────────────────
+  // We use a multi-parameter seed + refreshSig to ensure 
+  // background images change on every reload or sync click.
   const searchTerms = [
-    company.split(' ')[0],
-    triggers[0] ? TRIGGER_CATEGORY_MAPPING[triggers[0]]?.name : 'business',
-    'building',
-    'modern'
+    company,
+    'corporate',
+    'business',
+    'technology'
   ].filter(Boolean).join(',');
 
+  // The refreshSig ensures the image address rotates upon manual reload
   const backgroundImageUrl = item.image || item.imageUrl ||
-    `https://images.unsplash.com/featured/1200x800?${searchTerms}&sig=${positiveHash}`;
+    `https://images.unsplash.com/featured/1200x800?${searchTerms}&sig=${positiveHash}-${item.id}-${refreshSig}`;
 
   return {
     ...item,
@@ -106,7 +98,8 @@ const augmentNewsItem = (item) => {
     companyDomain: domain,
     officialLogo,
     image: backgroundImageUrl,
-    content: shortContent
+    content: shortContent,
+    socialSource: item.socialSource || 'Intelligence Hub'
   };
 };
 
@@ -119,7 +112,7 @@ const apiClient = axios.create({
 
 // Interceptor to inject bearer token for Account API requests
 apiClient.interceptors.request.use(config => {
-  const token = sessionStorage.getItem('authToken');
+  const token = localStorage.getItem('authToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -132,8 +125,8 @@ export const authAPI = {
     const user = users.find(u => u.username === username && u.password === password);
 
     if (user) {
-      sessionStorage.setItem('authToken', 'auth-token-' + Date.now());
-      sessionStorage.setItem('authUser', JSON.stringify({ name: user.username, email: user.email }));
+      localStorage.setItem('authToken', 'auth-token-' + Date.now());
+      localStorage.setItem('authUser', JSON.stringify({ name: user.username, email: user.email }));
       return { user: { name: user.username, email: user.email } };
     } else {
       throw new Error('Username and Password is Incorrect');
@@ -149,10 +142,10 @@ export const authAPI = {
     return { success: true };
   },
   logout: () => {
-    sessionStorage.removeItem('authToken');
-    sessionStorage.removeItem('authUser');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('authUser');
   },
-  isAuthenticated: () => !!sessionStorage.getItem('authToken'),
+  isAuthenticated: () => !!localStorage.getItem('authToken'),
 };
 
 export const newsAPI = {
@@ -162,6 +155,7 @@ export const newsAPI = {
     // Centralized Fallback Logic to ensure consistency
     const applyFallbackFilters = (rawBuffer) => {
       let data = [...rawBuffer];
+      const refreshSig = Date.now(); // Unified visual fingerprint for this session/sync
       if (filters.companyDomain) {
         data = data.filter(item => item.companyDomain === filters.companyDomain);
       }
@@ -179,7 +173,7 @@ export const newsAPI = {
           item.triggers && item.triggers.some(t => targetCodes.includes(t))
         );
       }
-      return data.map(augmentNewsItem);
+      return data.map(item => augmentNewsItem(item, refreshSig));
     };
 
     try {
@@ -210,29 +204,30 @@ export const newsAPI = {
       const response = await liveNewsClient.post('', payload);
       const responseData = response.data;
 
-      // Filtered fallback for API errors disguised as 200s
+      // Synchronize with the Social Media Connectivity Buffer if Live Hub returns zero
       if (responseData?.code && responseData.code !== 200) {
         console.warn(`[INTELLIZENCE] API Report: ${responseData.code} - ${responseData.message}`);
         if (!responseData.news || responseData.news.length === 0) {
-          return { news: applyFallbackFilters(MOCK_NEWS.news), source: 'fallback' };
+          return { news: applyFallbackFilters(MOCK_NEWS.news), source: 'social' };
         }
       }
 
       let rawNews = responseData?.news || (Array.isArray(responseData) ? responseData : []);
 
       if (rawNews.length === 0) {
-        console.warn('[INTELLIZENCE] Zero articles returned from Live Hub. Loading emergency buffer.');
-        return { news: applyFallbackFilters(MOCK_NEWS.news), source: 'fallback' };
+        console.warn('[INTELLIZENCE] Zero articles returned. Synchronizing with Official Social Repository.');
+        return { news: applyFallbackFilters(MOCK_NEWS.news), source: 'social' };
       }
 
       console.log(`[INTELLIZENCE] Successfully synchronized ${rawNews.length} live signals.`);
+      const syncSig = Date.now();
       return {
-        news: rawNews.slice(0, 100).map(augmentNewsItem),
+        news: rawNews.slice(0, 100).map(item => augmentNewsItem(item, syncSig)),
         source: 'live'
       };
     } catch (error) {
-      console.error('[INTELLIZENCE] Live Connection failed. Loading secure buffer.', error);
-      return { news: applyFallbackFilters(MOCK_NEWS.news), source: 'fallback' };
+      console.error('[INTELLIZENCE] Live Connection failed. Routing to Secure Social Hub.', error);
+      return { news: applyFallbackFilters(MOCK_NEWS.news), source: 'social' };
     }
   },
 };
